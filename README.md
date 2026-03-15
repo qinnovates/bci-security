@@ -2,6 +2,8 @@
 
 BCI security toolkit for researchers, developers, and engineers. Threat modeling, vulnerability scoring, pattern detection, and neuroethics compliance for brain-computer interfaces.
 
+**The first BCI toolkit for AI coding platforms.** No other tool provides structured neurosecurity analysis — threat taxonomies, neural impact scoring, or neuroethics compliance checking — inside a coding agent. As of March 2026, no equivalent exists in any AI coding platform marketplace.
+
 ## Requirements
 
 No external dependencies. No API keys. No server to run.
