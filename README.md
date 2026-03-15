@@ -131,6 +131,24 @@ The difference between therapy and attack is consent, dosage, and oversight.
 **Student exploring neurosecurity as a career:**
 > Install the plugin, run the demo, walk through the learning modules. The 135-technique catalog with evidence tiers and therapeutic analogs is a structured introduction to a field that barely exists yet. Get in early.
 
+**Pair programming with Claude Code or Coworker:**
+> Working on a BCI project with Claude? The plugin activates automatically when it detects BCI library imports (pylsl, brainflow, mne, pyedflib). Claude flags unsafe patterns as you code — unencrypted LSL streams, PII in neural data headers, hardcoded device credentials — without you asking. Security guidance embedded in your workflow.
+
+**Code review on a BCI pull request:**
+> Point Claude at a PR touching BCI code. The plugin's passive scanner catches transport security gaps, data storage issues, and missing consent metadata. Generate a `/bci report` to attach to the review with specific TARA technique references and NISS severity scores.
+
+**Regulatory prep for FDA submission:**
+> Use `/bci threat-model` to generate a structured threat assessment mapped to your device class. The output references IEC 14971 and FDA premarket cybersecurity guidance. Hand the Markdown to your regulatory consultant — they fill in the gaps, you save hours of threat enumeration.
+
+**Teaching a neurosecurity course:**
+> Assign `/bci learn tara` and `/bci learn niss` as interactive homework. Students explore 135 real threat techniques with evidence tiers, therapeutic analogs, and severity scores. Better than reading a paper — they query, filter, and reason about threats hands-on.
+
+## Platform Compatibility
+
+Built for **Claude Code** and **Claude Coworker**. The plugin uses standard Claude Code plugin architecture (skills, commands, hooks) and works anywhere Claude Code runs.
+
+**Coming soon:** Codex marketplace submission for OpenAI Codex CLI compatibility. The plugin's architecture is agent-agnostic — skills are markdown, data is JSON, hooks are lightweight scripts. Portable to any AI coding platform that supports plugin systems.
+
 ## Who This Is For
 
 - **Neurotech startups** building BCI products
