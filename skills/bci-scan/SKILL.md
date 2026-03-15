@@ -29,6 +29,16 @@ This skill activates passively when you detect the user is working with BCI-rela
 ### File extensions
 - `.edf`, `.bdf`, `.xdf`, `.gdf`, `.fif`, `.nwb`
 
+### Consent Gate for Neural Data Files (MANDATORY)
+
+When passive activation triggers on neural data file extensions (`.edf`, `.bdf`, `.xdf`, `.gdf`, `.fif`, `.nwb`) — as opposed to code imports — pause before scanning and ask the user ONE TIME per session:
+
+> "I detected neural data files in this project. Before scanning, confirm: these files do not contain real patient or subject data, OR your organization's data handling agreements cover AI-assisted analysis of this data. (The AI agent processes file contents via its host API.)"
+
+After the user confirms, proceed with scanning for the remainder of the session without re-asking. If the user declines or expresses concern, suggest they exclude neural data files from the scan and focus on code-only analysis.
+
+This gate does NOT apply to code imports (Python/JS/C imports of BCI libraries). Code scanning proceeds without confirmation.
+
 ## What to Check
 
 Apply the 3 v1.0 detection rules from the `/bci-scan` command:

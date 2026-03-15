@@ -1,4 +1,5 @@
 {
+  "_disclaimer": "SAMPLE DATA ONLY — does not represent any specific device's actual configuration or security posture. For demonstration purposes only.",
   "device_name": "Implanted BCI System (Generic Profile)",
   "device_class": "clinical-implant",
   "channels": 1024,

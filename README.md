@@ -195,8 +195,10 @@ Every clinical impact statement in this plugin includes "for threat modeling pur
 
 ## Licenses
 
-- **Code:** Apache 2.0 (`LICENSE-CODE`)
-- **Data** (TARA catalog, NISS scores, guardrails): CC BY-SA 4.0 (`LICENSE-DATA`)
+- **Code and skill definitions:** Apache 2.0 (`LICENSE-CODE`) — covers all `.md` files in `commands/`, `skills/`, and `agents/`, plus any scripts
+- **Data** (TARA catalog, NISS scores, guardrails, sample configs): CC BY-SA 4.0 (`LICENSE-DATA`) — covers all `.json` files in `data/`
+
+**Note on CC BY-SA 4.0 (ShareAlike):** The data license permits commercial use, but derivative works incorporating TARA data must be released under the same CC BY-SA 4.0 terms. If you integrate TARA techniques, NISS scores, or guardrails data into a proprietary product, the data component must remain open. This is an intentional open-knowledge policy choice.
 
 ## Contributing
 

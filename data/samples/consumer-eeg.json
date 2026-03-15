@@ -1,6 +1,7 @@
 {
+  "_disclaimer": "SAMPLE DATA ONLY — does not represent any specific device's actual configuration or security posture. For demonstration purposes only.",
   "device_name": "OpenBCI Cyton 8-Channel EEG",
-  "device_class": "research-eeg",
+  "device_class": "consumer-eeg",
   "channels": 8,
   "sample_rate": 250,
   "signal_type": "EEG",

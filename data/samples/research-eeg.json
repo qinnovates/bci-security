@@ -1,4 +1,5 @@
 {
+  "_disclaimer": "SAMPLE DATA ONLY — does not represent any specific device's actual configuration or security posture. For demonstration purposes only.",
   "device_name": "g.tec g.USBamp Research System",
   "device_class": "research-eeg",
   "channels": 64,
