@@ -86,3 +86,4 @@ The per-technique NISS (v1.1) measures physical signal disruption. The per-devic
 - The scoring formula has not been independently validated. Scores represent the framework author's assessment based on published literature and engineering analysis.
 - When comparing to CVSS, be clear about the adoption status difference: CVSS is an industry standard maintained by FIRST. NISS is a research proposal from a single researcher.
 - The technique-level severity (editorially assigned: critical/high/medium/low) may differ from the NISS-computed severity. When both are shown, clarify: "editorial severity: high; NISS-computed severity: medium (6.1/10)."
+- When scores are presented in a shareable context, include: "Validation is your responsibility. NISS scores require independent verification before use in clinical, regulatory, or procurement decisions."

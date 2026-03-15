@@ -156,6 +156,21 @@ Built for **Claude Code** and **Claude Coworker**. The plugin uses standard Clau
 - **BCI researchers** who want structured security analysis
 - **Students** entering the neurosecurity field
 
+## Privacy & Data Handling
+
+This plugin runs entirely locally. It does not transmit, store, or retain any data from your environment.
+
+**Report sanitization is built in.** All generated reports automatically:
+- Strip absolute file paths (replaced with relative paths)
+- Redact API keys, tokens, and credentials found in scanned code
+- Remove hostnames, IP addresses, and internal URLs
+- Exclude raw neural data samples, patient names, and subject identifiers
+- Omit organization names unless you explicitly opt in
+
+**Privacy of production data is your responsibility.** Even with sanitization, review all generated output before sharing externally. You know your environment better than any automated tool. If a report will leave your machine, read it first.
+
+**Validation is your responsibility.** This plugin produces draft analyses, not certified assessments. All findings require independent verification by qualified security professionals before acting on them. Do not use output from this plugin as the sole basis for clinical, regulatory, or procurement decisions.
+
 ## Important Caveats
 
 This plugin is built on the QIF framework, which is:
