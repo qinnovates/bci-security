@@ -4,9 +4,72 @@ Threat modeling and security analysis for brain-computer interfaces. A neurotech
 
 ## Requirements
 
-No external dependencies. Install and run `/bci-scan --demo`.
+No external dependencies. No API keys. No server to run.
 
 **Status:** Research tool. Proposed framework, not an adopted standard. Not independently peer-reviewed.
+
+## Installation
+
+### From GitHub (recommended)
+```bash
+# Clone the repo
+git clone https://github.com/qinnovates/bci-security.git
+
+# Install as a local Claude Code plugin
+claude plugins install --scope user ./bci-security
+```
+
+### From the Claude Code Marketplace (coming soon)
+```bash
+claude plugins install bci-security@qinnovates
+```
+
+### Verify installation
+```bash
+claude plugins list
+# Should show: bci-security (enabled)
+```
+
+Then start a new Claude Code session and run `/bci-scan --demo`.
+
+## Usage
+
+### First run — see a threat report in 30 seconds
+```
+/bci-scan --demo
+```
+Scans a bundled OpenBCI Cyton EEG config. Shows applicable threats with severity scores and plain-English explanations. No setup required.
+
+### Scan your own BCI project
+```
+/bci-scan .
+```
+Scans the current directory for BCI library imports (pylsl, brainflow, mne, pyedflib, OpenBCI), neural data files (.edf, .bdf, .xdf), and unsafe patterns (unencrypted streams, PII in data files, hardcoded API keys).
+
+### Look up a specific technique
+```
+/bci explain QIF-T0001
+```
+Returns a three-layer explanation: one-line summary, plain-English description with therapeutic analog, and (on request) full technique card with sources and defensive controls.
+
+### Generate a threat model for your device
+```
+/bci learn tara
+```
+Interactive walkthrough that teaches TARA, NISS, and neuroethics concepts by example. Then use the threat model generator:
+```
+/bci threat-model
+```
+Asks about your device class, signal types, connectivity, and deployment context. Produces a structured Markdown threat model document you can use for security reviews or regulatory submissions.
+
+### Check text for neuroethics compliance
+Paste any BCI-related text (paper draft, blog post, marketing copy) and the neuromodesty checker will scan for overclaims against 8 published guardrails from the neuroethics literature.
+
+### Generate a shareable report
+```
+/bci report
+```
+Produces a clean Markdown threat assessment you can share with colleagues, paste in Slack, or attach to a security review.
 
 ## What It Does
 
