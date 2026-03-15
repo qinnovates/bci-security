@@ -1,6 +1,6 @@
 # BCI Security
 
-Threat modeling and security analysis for brain-computer interfaces. A neurotechnology security tool for AI coding platforms.
+BCI security toolkit for researchers, developers, and engineers. Threat modeling, vulnerability scoring, pattern detection, and neuroethics compliance for brain-computer interfaces.
 
 ## Requirements
 

@@ -1,6 +1,6 @@
 {
   "name": "bci-security",
-  "description": "Scan BCI code for security issues, model threats with 135 neural attack techniques, and enforce neuroethics guardrails. The only neurotechnology security tool for AI coding platforms.",
+  "description": "BCI security toolkit for researchers, developers, and engineers. Threat modeling, vulnerability scoring, pattern detection, and neuroethics compliance for brain-computer interfaces.",
   "version": "1.0.0",
   "author": {
     "name": "QInnovate"
