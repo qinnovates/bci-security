@@ -69,11 +69,16 @@ Scans the current directory for BCI library imports (pylsl, brainflow, mne, pyed
 ```
 Returns a three-layer explanation: one-line summary, plain-English description with therapeutic analog, and (on request) full technique card with sources and defensive controls.
 
-### Generate a threat model for your device
+### Learn the framework
 ```
-/bci learn tara
+/bci learn quickstart    # 5-minute overview
+/bci learn ttp           # TARA ↔ MITRE ATT&CK mapping (security professionals)
+/bci learn clinical      # Therapy-attack boundary (clinicians + researchers)
+/bci learn tara          # Full threat catalog walkthrough
+/bci learn niss          # Severity scoring deep dive
+/bci learn neuroethics   # The 8 guardrails
 ```
-Interactive walkthrough that teaches TARA, NISS, and neuroethics concepts by example. Then use the threat model generator:
+Interactive walkthroughs that teach by doing with real data from the technique catalog. Then use the threat model generator:
 ```
 /bci threat-model
 ```
@@ -87,6 +92,83 @@ Paste any BCI-related text (paper draft, blog post, marketing copy) and the neur
 /bci report
 ```
 Produces a clean Markdown threat assessment you can share with colleagues, paste in Slack, or attach to a security review.
+
+## Understanding QIF and TARA
+
+This section is for security professionals, clinicians, and researchers who want to understand how the framework works — not just run scans.
+
+### How to Read a TARA Technique
+
+Every technique in the catalog follows this structure:
+
+```
+ID:                 QIF-T0001
+Name:               Signal injection
+Tactic:             QIF-N.IJ (Neural Injection)
+Bands:              I0–N1 (interface layer to first neural layer)
+Status:             CONFIRMED
+Severity:           high
+NISS Vector:        NISS:1.1/BI:H/CR:H/CD:H/CV:E/RV:P/NP:T
+NISS Score:         6.1/10
+Mechanism:          Electrical current delivery at electrode-tissue interface
+Therapeutic Analog: tDCS/tACS neuromodulation
+Dual Use:           confirmed
+Sources:            Kohno et al. 2009, Bonaci et al. 2015
+```
+
+**For security professionals:** `tactic` maps to your kill chain, `bands` maps to the stack layer, `status` tells you how real the threat is, `mitigations` tells you what to do about it.
+
+**For clinicians:** `therapeutic_analog` shows which treatment uses this mechanism, `dual_use` shows how certain the overlap is, `niss` captures biological severity across 6 dimensions that CVSS cannot express.
+
+Run `/bci explain QIF-T0001` to see any technique card interactively.
+
+### How TARA Relates to MITRE ATT&CK
+
+If you know MITRE ATT&CK, you already know the model:
+
+| Concept | ATT&CK | TARA |
+|---------|--------|------|
+| **Tactics** | What the attacker wants | Same — 16 neural-specific tactics |
+| **Techniques** | How they do it | Same — 135 techniques targeting neural systems |
+| **Procedures** | Specific implementation steps | Device-specific — left to your threat model |
+
+TARA fills the gap ATT&CK was never designed for. ATT&CK covers the silicon side (firmware, Bluetooth, cloud API). TARA covers what happens after the attacker reaches the neural interface — signal injection, cognitive manipulation, biological evasion, neural data harvesting.
+
+Several TARA tactics have **no ATT&CK equivalent**: Cognitive Exploitation (QIF-C.EX), Cognitive Impairment (QIF-C.IM), Biological Integration (QIF-B.IN), Biological Evasion (QIF-B.EV). These represent the domain gap that motivated building TARA.
+
+In practice, a BCI threat model uses both: ATT&CK for IT infrastructure, TARA for neural-specific techniques. They're complementary.
+
+Run `/bci learn ttp` for a full interactive walkthrough with examples.
+
+### The Therapy-Attack Boundary
+
+104 out of 135 techniques share physical mechanisms with therapeutic treatments. This is the defining characteristic of BCI security.
+
+| Treatment | Attack Technique | Same Mechanism | Boundary |
+|-----------|-----------------|----------------|----------|
+| tDCS for depression | QIF-T0001 Signal injection | Electrical current at electrode-tissue interface | Consent + current density limits |
+| DBS for Parkinson's | QIF-T0002 Neural ransomware | Closed-loop stimulation parameter control | Clinical oversight + parameter bounds |
+| EEG diagnostics | QIF-T0003 Eavesdropping | Passive neural signal capture | Data access controls + consent |
+| rTMS for stroke rehab | QIF-T0009 rTMS exploitation | Magnetic pulse delivery to cortex | Frequency/intensity bounds |
+
+The mechanism is the same. The boundary between therapy and attack is **consent** (did the person agree?), **dosage** (within safe parameters?), and **oversight** (is a qualified professional involved?).
+
+If you're a clinician, your treatment protocols already define the safe parameter space. If you're a security engineer, the therapeutic parameters tell you what "normal" looks like — your detection logic is the delta between therapeutic and anomalous behavior.
+
+Run `/bci learn clinical` for the full walkthrough with clinical depth and evidence tiers.
+
+### Learning Paths
+
+| Path | Audience | Time | Command |
+|------|----------|------|---------|
+| Quickstart | Anyone | 5 min | `/bci learn quickstart` |
+| TARA | Security + research | 15 min | `/bci learn tara` |
+| TTPs | Security professionals | 10 min | `/bci learn ttp` |
+| Clinical | Clinicians + researchers | 15 min | `/bci learn clinical` |
+| NISS | Security + clinical | 10 min | `/bci learn niss` |
+| Neuroethics | Everyone | 10 min | `/bci learn neuroethics` |
+
+All learning paths are interactive — Claude walks you through concepts with real data from the technique catalog, not hypothetical examples. Ask questions as you go.
 
 ## Design Philosophy
 
@@ -129,7 +211,7 @@ That's it. Scans a sample EEG device config and shows you what an attacker could
 | `/bci compliance assess` | Interactive compliance questionnaire |
 | `/bci explain <ID>` | Explain a threat technique in plain English |
 | `/bci report` | Generate a shareable threat assessment |
-| `/bci learn <topic>` | Interactive walkthrough (tara, niss, neuroethics, quickstart) |
+| `/bci learn <topic>` | Interactive walkthrough (tara, niss, neuroethics, quickstart, ttp, clinical) |
 | `/bci glossary [term]` | Quick BCI security definitions |
 
 ## Security Hardrails
@@ -168,6 +250,7 @@ The difference between therapy and attack is consent, dosage, and oversight.
 - **Security Hardrails Framework**: Combined guardrails (ethical constraints) + hardening (technical enforcement) model
 - **8 Neuroethics Guardrails**: From Morse, Poldrack, Racine, Ienca, Kellmeyer, Wexler, Tennison, Vul/Eklund
 - **5 Sample Files**: 3 device configs (consumer EEG, research system, clinical implant), 1 ADHD research study config (with intentional compliance violations), 1 vulnerable BCI Python script (with security anti-patterns)
+- **6 Interactive Learning Paths**: quickstart, tara, ttp, clinical, niss, neuroethics — teach by doing with real catalog data
 - **Legal Disclaimers**: Comprehensive LEGAL.md covering liability limitations, data handling, privacy, and regulatory framework status
 
 ## Example Use Cases
@@ -179,13 +262,16 @@ The difference between therapy and attack is consent, dosage, and oversight.
 > Run `/bci-scan .` on your BrainFlow + BLE codebase. Get flagged for unencrypted Bluetooth streams and PII in EDF headers. Generate a threat model filtered to your device class. Export for your FDA premarket cybersecurity submission.
 
 **Medical device security team assessing an implanted BCI:**
-> Run `/bci explain QIF-T0001` to understand signal injection at the electrode-tissue interface. Use the threat modeler to map all 135 techniques against your device profile. Score each with NISS to prioritize remediation.
+> Run `/bci explain QIF-T0001` to understand signal injection at the electrode-tissue interface. Use `/bci learn clinical` to see how every technique maps to its therapeutic equivalent — your clinical protocols define the safe parameter space, and security enforces the boundary. Use the threat modeler to map all 135 techniques against your device profile. Score each with NISS to prioritize remediation.
 
 **Researcher writing a BCI security paper:**
-> Use `/bci learn tara` to understand the threat taxonomy. Look up techniques by domain, severity, or evidence tier. Run the neuromodesty checker on your draft to catch overclaims before peer review.
+> Use `/bci learn tara` to understand the threat taxonomy. Run `/bci learn clinical` to explore the therapy-attack boundary with evidence tiers. Look up techniques by domain, severity, or evidence tier. Run the neuromodesty checker on your draft to catch overclaims before peer review.
 
 **Security engineer new to neurotechnology:**
-> Start with `/bci-scan --demo` to see a threat report in 30 seconds. Run `/bci learn quickstart` for a 5-minute overview. Use the glossary for unfamiliar terms. You already know CVSS and ATT&CK — NISS and TARA are the BCI equivalents.
+> Start with `/bci-scan --demo` to see a threat report in 30 seconds. Run `/bci learn quickstart` for a 5-minute overview, then `/bci learn ttp` to map TARA to the MITRE ATT&CK model you already know. NISS is to CVSS what TARA is to ATT&CK — the neural extension.
+
+**Clinician reviewing BCI device security:**
+> Run `/bci learn clinical` — it speaks your language. Every technique maps to a treatment you already know: tDCS, DBS, neurofeedback, rTMS. The 6 NISS dimensions (biological impact, coupling risk, neuroplasticity) map to clinical parameters you already monitor. Your expertise in safe dosage boundaries IS security expertise. The plugin helps you formalize what you already know into a threat model.
 
 **Student exploring neurosecurity as a career:**
 > Install the plugin, run the demo, walk through the learning modules. The 135-technique catalog with evidence tiers and therapeutic analogs is a structured introduction to a field that barely exists yet. Get in early.
