@@ -83,11 +83,12 @@ Applied to ALL output from ALL report-generating surfaces (bci-scan, bci-complia
 | 7 | Environment details (OS, tool versions, local paths) → stripped | No |
 
 **Self-verification pass (mandatory):** After generating a complete report, scan your own output for:
-- Absolute paths matching `/Users/` or `/home/`
-- Strings matching credential patterns from Section 3
+- Absolute paths: `/Users/`, `/home/`, `C:\Users\`, `/var/`, `/srv/`, `/opt/`, `/etc/`
+- All credential patterns from Section 3 (AWS, Stripe, Slack, GitHub, GitLab, PEM, JWT, generic API keys/tokens)
+- Person names that should have been redacted per rule 4
 - Content that should have been redacted per rules above
 
-If any are found, redact them before returning the report.
+If any are found, redact them before returning the report. This pass is performed by the same AI model — it is not independent verification. Always review output before sharing externally.
 
 **Even with `--include-paths`:** Absolute paths that expose system usernames or directory structure are NEVER included. Only project-relative paths are allowed.
 
@@ -95,7 +96,7 @@ If any are found, redact them before returning the report.
 
 **Trigger:** Neural data file extensions: `.edf`, `.bdf`, `.xdf`, `.gdf`, `.fif`, `.nwb`
 
-**Applies to:** Both the `/bci-scan` command AND the passive `bci-scan` skill. Both surfaces must implement the gate.
+**Applies to:** ALL skills and commands that process neural data files — `/bci-scan`, `bci-scan` skill, `bci-compliance`, `bci-anonymize`, and `threat-modeler` agent. Every surface that reads neural data file content must implement this gate.
 
 **Prompt:**
 > "I detected neural data files. Before scanning, confirm: these files do not contain real patient or subject data, OR your organization's data handling agreements cover AI-assisted analysis. (The AI agent processes file contents via its host API.)"

@@ -107,8 +107,8 @@
       "name": "Quantum tunneling exploit",
       "tactic": "QIF-N.IJ",
       "bands": "I0\u2013N1",
-      "status": "THEORETICAL",
-      "severity": "high",
+      "status": "SPECULATIVE",
+      "severity": "low",
       "niss": {
         "vector": "NISS:1.1/BI:H/CR:H/CD:H/CV:E/RV:P/NP:T",
         "score": 6.1,
@@ -132,8 +132,8 @@
       "name": "Davydov soliton attack",
       "tactic": "QIF-N.IJ",
       "bands": "I0\u2013N1",
-      "status": "THEORETICAL",
-      "severity": "high",
+      "status": "SPECULATIVE",
+      "severity": "low",
       "niss": {
         "vector": "NISS:1.1/BI:H/CR:H/CD:H/CV:E/RV:P/NP:T",
         "score": 6.1,

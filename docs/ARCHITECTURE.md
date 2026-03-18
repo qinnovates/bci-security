@@ -61,6 +61,10 @@ BCI Security is a multi-skill plugin providing threat modeling, vulnerability sc
 │  │neural-data-guard.py              │                   │
 │  │PostToolUse on Write|Edit         │                   │
 │  │Detects neural data file writes   │                   │
+│  │Triggers on: .edf .bdf .xdf .nwb │                   │
+│  │Action: alert user, no file mod   │                   │
+│  │Security: no shell exec, no eval  │                   │
+│  │         path normalization only  │                   │
 │  └──────────────────────────────────┘                   │
 └──────────────────────────────────────────────────────────┘
 ```

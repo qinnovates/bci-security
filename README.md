@@ -4,9 +4,17 @@ BCI security toolkit for researchers, developers, and engineers. Threat modeling
 
 To our knowledge, no other tool provides structured neurosecurity analysis — threat taxonomies, neural impact scoring, or neuroethics compliance checking — inside an AI coding platform. As of March 2026, we are unaware of any equivalent in any AI coding platform marketplace.
 
+## Quick Start
+
+```
+/bci-scan --demo
+```
+
+Scans a sample BCI device config with intentional security violations. Shows a threat report with TARA technique mappings and NISS severity scores in 30 seconds. No setup required beyond installation.
+
 ## Requirements
 
-No external dependencies. No API keys. No server to run.
+No external dependencies. No API keys. No server to run. **No network calls.** The plugin processes everything locally — it never phones home, never sends data to external endpoints.
 
 **Status:** Research tool. Proposed framework, not an adopted standard. Not independently peer-reviewed.
 
@@ -337,6 +345,27 @@ NISS supplements CVSS. It does not replace it. TARA supplements MITRE ATT&CK for
 
 Every clinical impact statement in this plugin includes "for threat modeling purposes" — these are threat modeling categories, not clinical predictions.
 
+## Known Limitations
+
+This plugin uses AI instruction-based enforcement, not runtime-enforced constraints. See `docs/SAFETY.md` Section 12 for details.
+
+- **Injection defense is best-effort.** Keyword blocklists can be bypassed via encoding, homoglyphs, or semantic paraphrase. Defense-in-depth (multiple layers) is the strategy.
+- **PII detection uses pattern matching.** False positives and false negatives are expected. PII-011 (cognitive state classification) requires BCI context keywords to reduce false positives from non-neural uses.
+- **Report sanitization is AI-instruction-based, not deterministic.** The same AI model generates and verifies the report. Always review output before sharing externally.
+- **NISS severity vs editorial severity may differ.** A technique can be tactically critical but have low biological impact (e.g., man-in-the-middle: critical tactic, NISS 2.7/10). Both are shown when relevant.
+
+### NISS Vector Quick Reference
+
+```
+NISS:1.1/BI:H/CR:H/CD:H/CV:E/RV:P/NP:T
+      │    │    │    │    │    └ Neuroplasticity (N/T/P/C)
+      │    │    │    │    └─── Reversibility (F/R/P/I)
+      │    │    │    └──────── Consent Violation (N/I/E/F)
+      │    │    └───────────── Coherence Disruption (N/L/M/H/C)
+      │    └────────────────── Coupling Risk (N/L/M/H)
+      └─────────────────────── Biological Impact (N/L/M/H/C)
+```
+
 ## Licenses
 
 - **Code and skill definitions:** Apache 2.0 (`LICENSE-CODE`) — covers all `.md` files in `commands/`, `skills/`, and `agents/`, plus any scripts
@@ -346,15 +375,16 @@ Use the data in commercial products, research, or derivative works. Just give cr
 
 ## Contributing
 
-Contributions welcome. To propose a new TARA technique, open a GitHub issue using the Technique Proposal template.
+Contributions welcome. See **[CONTRIBUTING.md](CONTRIBUTING.md)** for schemas and guides on adding TARA techniques, PII patterns, compliance frameworks, and security controls.
 
 ## Structure
 
 ```
 bci-security/
 ├── .claude-plugin/plugin.json     Plugin metadata
-├── commands/
-│   ├── bci.md                     Entry point (/bci)
+├── CONTRIBUTING.md                Contributing guide with data schemas
+├── commands/                      Thin routers — route user input to skills
+│   ├── bci.md                     Entry point (/bci) — routes subcommands
 │   └── bci-scan.md                Code scanner (/bci-scan --demo)
 ├── skills/
 │   ├── tara-lookup/               Query 135 threat techniques
@@ -368,8 +398,8 @@ bci-security/
 ├── agents/
 │   └── threat-modeler.md          Multi-step threat modeling agent
 ├── hooks/
-│   ├── hooks.json                 Hook configuration
-│   └── neural-data-guard.py       Neural data file detection script
+│   ├── hooks.json                 Hook configuration (PostToolUse on Write|Edit)
+│   └── neural-data-guard.py       Passive guardrail: alerts when neural data files are written
 ├── data/
 │   ├── tara-techniques.json       135 techniques (~120 KB)
 │   ├── niss-device-scores.json    22 device scores

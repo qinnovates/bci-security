@@ -82,9 +82,10 @@
       "name": "Person name in EEG/BCI filename",
       "category": "direct_identifiers",
       "pattern": "(?i)(john|jane|patient|subject|participant)[_\\s-]?[a-z]+\\.(edf|bdf|xdf|gdf|fif|nwb|csv|set)",
+      "pattern_broad": "[A-Z][a-z]{2,}[_\\s-][A-Z][a-z]{2,}\\.(edf|bdf|xdf|gdf|fif|nwb|csv|set)",
       "context": ["filename"],
       "severity": "critical",
-      "description": "Neural data filename appears to contain a person's name. Links recording to identity.",
+      "description": "Neural data filename appears to contain a person's name. The primary pattern checks common test names; the broad pattern catches any capitalized word pair before a neural data extension (e.g., Sarah_Connor_resting.edf). Broad pattern may produce false positives on non-name pairs.",
       "remediation": "Rename using BIDS convention: sub-<ID>_task-<task>_eeg.<ext>",
       "regulations": ["GDPR Art.4(1)", "CCPA 1798.140(o)", "Chile Neurorights Law Art.3"]
     },
@@ -160,8 +161,9 @@
       "category": "neural_identifiers",
       "pattern": "(?i)(emotion.?detect|mood.?classif|attention.?scor|stress.?level|cognitive.?state|mental.?state|thought.?decode|intent.?classif|fatigue.?detect|engagement.?scor)",
       "context": ["code", "config", "variable"],
+      "context_filter": "Only flag when pattern appears near BCI/neural context keywords (eeg, neural, bci, brain, brainwave, neuro, cortical, mne, pylsl, brainflow). Do NOT flag in general NLP sentiment analysis, video game analytics, sleep tracking from wearable HR data, or chatbot intent classification contexts.",
       "severity": "critical",
-      "description": "Cognitive state classification detected. Inferring mental states from neural data triggers the highest protection tier under neurorights frameworks. The Mind Act and Chile Neurorights Law specifically protect mental privacy and cognitive liberty.",
+      "description": "Cognitive state classification detected in BCI context. Inferring mental states from neural data triggers the highest protection tier under neurorights frameworks. The Mind Act and Chile Neurorights Law specifically protect mental privacy and cognitive liberty. Note: this pattern may match non-BCI uses (sentiment analysis, game analytics). Only flag when BCI/neural context is present.",
       "remediation": "Require explicit consent before cognitive classification. Document: (1) what states are classified, (2) purpose limitation, (3) accuracy limitations, (4) right to opt out. Never present inferred states as ground truth (see G1: Neuromodesty).",
       "regulations": ["Chile Neurorights Law Art.3", "UNESCO Recommendation Art.15-16", "Mind Act Sec.3-4", "GDPR Art.22"]
     },
