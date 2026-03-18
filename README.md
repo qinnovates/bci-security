@@ -266,6 +266,9 @@ bci-security/
 │   ├── regulatory-compliance.json 9 compliance domains, 5 frameworks
 │   ├── hardrails.json             Security hardrails framework
 │   └── samples/                   3 demo device configs
+├── docs/
+│   ├── SAFETY.md                  Canonical security specification
+│   └── ARCHITECTURE.md            Component map & data flow
 ├── LEGAL.md                       Legal notices & privacy disclaimer
 ├── LICENSE-CODE                   Apache 2.0
 └── LICENSE-DATA                   CC BY 4.0

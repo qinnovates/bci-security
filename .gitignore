@@ -1,15 +1,43 @@
+# Session artifacts — NEVER commit these
 _memory/
 _swarm/
+*.session.json
+sessions/
+
+# Secrets and credentials — NEVER commit these
 .env*
 *.pem
 *.key
 *.p12
 *.p8
 *.pfx
+*.crt
+*.cer
 *secret*
 *token*
 *password*
 credentials.*
-node_modules/
+*.keystore
+*.jks
+
+# IDE and OS
 .DS_Store
 *.log
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
