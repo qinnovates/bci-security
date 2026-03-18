@@ -29,7 +29,7 @@ Based on the arguments:
 - **"report"**: Generate a shareable threat assessment from the most recent scan
 - **"anonymize [<directory> | --check <file> | --template | --demo]"**: Scan neural data files for PII before processing. Checks filenames, headers, metadata, and embedded text for identifiers, then generates anonymization scripts. Run this BEFORE scanning or sharing BCI data
 - **"compliance [scan <path> | assess | --demo]"**: Run a regulatory compliance assessment. Scans for PII patterns, maps to GDPR/CCPA/Chile Neurorights/UNESCO/Mind Act requirements, and generates a compliance report with remediation roadmap
-- **"learn <topic>"**: Start an interactive walkthrough on tara, niss, or neuroethics
+- **"learn <topic>"**: Start an interactive walkthrough (topics: quickstart, tara, ttp, clinical, niss, neuroethics)
 - **"glossary [term]"**: Look up a BCI security term
 
 ## Welcome Message (when no arguments)
@@ -49,7 +49,7 @@ Commands:
   /bci compliance --demo    Run a sample compliance report
   /bci compliance scan .    Scan your project for regulatory compliance
   /bci compliance assess    Interactive compliance questionnaire
-  /bci learn <topic>        Interactive walkthrough (topics: tara, niss, neuroethics)
+  /bci learn <topic>        Interactive walkthrough (quickstart, tara, ttp, clinical, niss, neuroethics)
   /bci glossary [term]      Quick definitions
 
 First time? Run /bci-scan --demo to see a threat report in 30 seconds.
