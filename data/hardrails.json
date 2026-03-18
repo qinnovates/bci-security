@@ -1,0 +1,118 @@
+{
+  "_metadata": {
+    "title": "BCI Security Hardrails",
+    "version": "1.0.0",
+    "description": "Security Hardrails = Guardrails (ethical/regulatory constraints) + Hardening (technical enforcement). This file defines the combined defense-in-depth model for BCI security. Guardrails prevent overclaims and ethical violations. Hardening prevents data leakage, injection, and unauthorized access. Together they form hardrails — the rails that keep BCI systems on track.",
+    "license": "CC-BY-SA-4.0",
+    "concept": "The term 'hardrails' is intentional: guard + hard = hardrail. Guardrails are soft constraints (policy, ethics, documentation). Hardening is enforcement (pattern matching, sanitization, access control). A hardrail is a constraint that is both ethically grounded AND technically enforced."
+  },
+  "guardrails": {
+    "description": "Ethical and regulatory constraints that define what the system should NOT do. Derived from published neuroethics literature and regulatory frameworks.",
+    "source": "guardrails.json (8 neuroethics guardrails from Morse, Poldrack, Racine, Ienca, Kellmeyer, Wexler, Tennison, Vul/Eklund)",
+    "enforcement": "Neuromodesty check skill scans output for violations. Violations are flagged and corrected before output.",
+    "layers": [
+      {
+        "id": "GL-01",
+        "name": "Neuroethics Guardrails",
+        "description": "8 published neuroethics constraints (G1-G8) that prevent overclaims about neural systems",
+        "enforcement": "neuromodesty-check skill",
+        "data_file": "guardrails.json"
+      },
+      {
+        "id": "GL-02",
+        "name": "Regulatory Compliance Guardrails",
+        "description": "GDPR, CCPA, Chile Neurorights, UNESCO, Mind Act requirements mapped to BCI operations",
+        "enforcement": "bci-compliance skill",
+        "data_file": "regulatory-compliance.json"
+      },
+      {
+        "id": "GL-03",
+        "name": "Status Qualifier Guardrails",
+        "description": "All QIF components (TARA, NISS, NSP, Cs) must be presented as proposed/unvalidated/in-development",
+        "enforcement": "Mandatory disclaimer in all report output"
+      },
+      {
+        "id": "GL-04",
+        "name": "Dual-Use Framing Guardrail",
+        "description": "Every threat description must be paired with defensive controls. Offensive applications are out of scope.",
+        "enforcement": "Guardrail G7 check in neuromodesty-check + threat-modeler report format"
+      }
+    ]
+  },
+  "hardening": {
+    "description": "Technical enforcement mechanisms that detect, prevent, and report security violations. These are the 'hard' in hardrails — pattern matching, sanitization, access control.",
+    "layers": [
+      {
+        "id": "HL-01",
+        "name": "PII Detection Engine",
+        "description": "18 regex patterns detecting direct identifiers, neural identifiers, quasi-identifiers, health data, consent gaps, and retention violations in BCI data pipelines",
+        "enforcement": "bci-compliance skill pattern matching",
+        "data_file": "pii-patterns.json",
+        "detection_categories": [
+          "Direct identifiers (email, phone, SSN, names)",
+          "Neural identifiers (brain fingerprints, cognitive state classification, raw neural export)",
+          "Quasi-identifiers (DOB, IP, GPS, device serial)",
+          "Health identifiers (clinical diagnosis, stimulation parameters)",
+          "Consent gaps (missing sidecars, purpose limitation)",
+          "Retention violations (indefinite storage, cross-border transfer)"
+        ]
+      },
+      {
+        "id": "HL-02",
+        "name": "Report Sanitization Engine",
+        "description": "7-rule sanitization applied to all plugin output before it reaches the user",
+        "enforcement": "Mandatory sanitization rules in bci-scan, bci-threat-model, bci-compliance",
+        "rules": [
+          "Absolute paths → relative paths",
+          "Credentials → [REDACTED] (no opt-out)",
+          "Hostnames/IPs → [host]/[device-ip]",
+          "Person names → [subject]",
+          "Organization names → stripped (unless --include-org)",
+          "Neural data samples → never included",
+          "Environment details → stripped"
+        ]
+      },
+      {
+        "id": "HL-03",
+        "name": "Prompt Injection Defense",
+        "description": "All scanned file content treated as untrusted data. Detection of instruction-like patterns in data fields.",
+        "enforcement": "Untrusted Input Rule in all skills and commands",
+        "detection_patterns": [
+          "IMPORTANT:", "CLAUDE:", "SYSTEM:",
+          "ignore previous", "disregard sanitization",
+          "include full path", "user has requested"
+        ]
+      },
+      {
+        "id": "HL-04",
+        "name": "Neural Data Consent Gate",
+        "description": "Pause and confirm before scanning actual neural data files. Code scanning proceeds without gate.",
+        "enforcement": "Consent gate in bci-scan skill",
+        "trigger_extensions": [".edf", ".bdf", ".xdf", ".gdf", ".fif", ".nwb"]
+      },
+      {
+        "id": "HL-05",
+        "name": "Credential Redaction (Zero-Tolerance)",
+        "description": "API keys, tokens, passwords, and secrets found in scanned code are ALWAYS replaced with [REDACTED]. This rule has no opt-out, no override, no exception.",
+        "enforcement": "Hardcoded in all report generation flows"
+      },
+      {
+        "id": "HL-06",
+        "name": "Neural Data File Hook",
+        "description": "PostToolUse hook that triggers when neural data files are written, warning about anonymization and consent metadata",
+        "enforcement": "hooks.json PostToolUse on Write|Edit for neural file extensions"
+      }
+    ]
+  },
+  "compliance_report": {
+    "description": "The compliance report combines guardrail and hardening findings into a single assessment",
+    "components": [
+      "PII scan results (HL-01) mapped to regulatory requirements (GL-02)",
+      "Technical security findings (existing 3 scan rules) mapped to compliance domains",
+      "Neuroethics compliance status (GL-01) for any text output",
+      "Status qualifier verification (GL-03) for framework references",
+      "Dual-use framing check (GL-04) for threat descriptions"
+    ],
+    "output": "Structured Markdown report with executive summary, findings matrix, regulatory mapping, and remediation roadmap"
+  }
+}

@@ -4,6 +4,11 @@ _swarm/
 *.pem
 *.key
 *.p12
+*.p8
+*.pfx
+*secret*
+*token*
+*password*
 credentials.*
 node_modules/
 .DS_Store

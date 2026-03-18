@@ -76,10 +76,13 @@ Produces a clean Markdown threat assessment you can share with colleagues, paste
 ## What It Does
 
 - **Scans BCI code** for unsafe patterns (unencrypted neural streams, PII in data files, hardcoded credentials)
+- **Detects PII in neural data pipelines** using 18 pattern-matching rules mapped to GDPR, CCPA, Chile Neurorights, UNESCO, and Mind Act
+- **Generates compliance reports** assessing regulatory risk across 9 compliance domains with remediation roadmaps
 - **Looks up threat techniques** from a catalog of 135 attacks targeting neural systems
 - **Scores severity** using NISS, a neural-specific supplement to CVSS
 - **Generates threat models** for BCI devices (consumer EEG, research systems, clinical implants)
 - **Checks neuroethics compliance** against 8 published guardrails
+- **Enforces Security Hardrails** — combined guardrails (ethical constraints) + hardening (technical enforcement) across all plugin output
 
 ## Quick Start
 
@@ -95,10 +98,33 @@ That's it. Scans a sample EEG device config and shows you what an attacker could
 |---------|-------------|
 | `/bci-scan --demo` | Scan a sample device — start here |
 | `/bci-scan <file>` | Scan your BCI code or config |
+| `/bci compliance --demo` | Run a sample regulatory compliance report |
+| `/bci compliance scan .` | Scan your project for PII and regulatory compliance |
+| `/bci compliance assess` | Interactive compliance questionnaire |
 | `/bci explain <ID>` | Explain a threat technique in plain English |
 | `/bci report` | Generate a shareable threat assessment |
 | `/bci learn <topic>` | Interactive walkthrough (tara, niss, neuroethics, quickstart) |
 | `/bci glossary [term]` | Quick BCI security definitions |
+
+## Security Hardrails
+
+**Hardrails = Guardrails + Hardening.** This plugin enforces both ethical constraints and technical enforcement in a single defense-in-depth model.
+
+**Guardrails** (what the system should NOT claim or do):
+- 8 neuroethics guardrails from published literature (Morse, Poldrack, Racine, Ienca, Kellmeyer, Wexler, Tennison, Vul/Eklund)
+- Regulatory compliance requirements mapped to GDPR, CCPA, Chile Neurorights, UNESCO, Mind Act
+- Status qualifiers enforced on all QIF component references
+- Dual-use framing — every threat paired with defensive controls
+
+**Hardening** (technical enforcement):
+- 18 PII detection patterns with regex matching across 6 categories (direct identifiers, neural identifiers, quasi-identifiers, health data, consent gaps, retention violations)
+- 7-rule report sanitization engine (paths, credentials, hostnames, names, orgs, neural data, environment)
+- Prompt injection defense (untrusted input rule across all skills)
+- Neural data consent gate before scanning .edf/.bdf/.xdf files
+- Zero-tolerance credential redaction (no opt-out)
+- PostToolUse hook for neural data file detection
+
+Every scan, report, and assessment passes through both layers before output reaches the user.
 
 ## The Core Insight
 
@@ -111,10 +137,17 @@ The difference between therapy and attack is consent, dosage, and oversight.
 - **TARA**: 135 threat techniques across 11 biological domains, each with evidence tiers (CONFIRMED / EMERGING / DEMONSTRATED / THEORETICAL / PLAUSIBLE / SPECULATIVE)
 - **NISS**: 6-dimensional severity scoring — Biological Impact, Coupling Risk, Coherence Disruption, Consent Violation, Reversibility, Neuroplasticity
 - **3 Code Scanning Rules**: Transport encryption, data storage PII, API credential handling
+- **18 PII Detection Patterns**: Regex-based detection for emails, phone numbers, national IDs, neural biometrics, cognitive state classifiers, clinical diagnoses, consent gaps, and retention violations
+- **Compliance Report Engine**: Regulatory risk assessment across 9 domains, mapped to GDPR, CCPA, Chile Neurorights Law, UNESCO Recommendation, and Mind Act
+- **Security Hardrails Framework**: Combined guardrails (ethical constraints) + hardening (technical enforcement) model
 - **8 Neuroethics Guardrails**: From Morse, Poldrack, Racine, Ienca, Kellmeyer, Wexler, Tennison, Vul/Eklund
 - **3 Sample Configs**: Consumer EEG, research system, clinical implant
+- **Legal Disclaimers**: Comprehensive LEGAL.md covering liability limitations, data handling, privacy, and regulatory framework status
 
 ## Example Use Cases
+
+**Running a regulatory compliance check before launch:**
+> Run `/bci compliance scan .` on your BCI codebase. Get a structured report showing PII in neural data pipelines, missing consent sidecars, unencrypted data transfers, and cognitive state classification without consent gates. Each finding maps to specific GDPR articles, CCPA sections, and Chile Neurorights provisions. Export the remediation roadmap for your legal and engineering teams.
 
 **Neurotech startup shipping a consumer EEG headband:**
 > Run `/bci-scan .` on your BrainFlow + BLE codebase. Get flagged for unencrypted Bluetooth streams and PII in EDF headers. Generate a threat model filtered to your device class. Export for your FDA premarket cybersecurity submission.
@@ -156,31 +189,30 @@ Built for **Claude Code** and **Claude Coworker**. The plugin uses standard Clau
 - **BCI researchers** who want structured security analysis
 - **Students** entering the neurosecurity field
 
-## Privacy & Data Handling
+## Privacy, Data Handling & Legal
 
-**How data flows:** This plugin contains no network calls and stores no data itself. However, it runs inside AI coding agents (Claude Code, Codex, etc.) that process your conversation — including scanned file contents — via their host API (e.g., Anthropic's servers). When you run `/bci-scan .`, the AI agent reads your files and sends that context to the API for analysis. The plugin's instructions and data are local; the AI processing is not.
+For comprehensive legal notices, privacy disclaimers, and limitation of liability, see **[LEGAL.md](LEGAL.md)**.
 
-**Do not scan files containing patient data, IRB-restricted data, or proprietary protocols** unless your institution's data governance policy permits sending that data to your AI platform provider. Review your AI platform's privacy policy and data processing agreement before scanning sensitive code.
+**Summary:**
 
-**Best-effort report sanitization.** The plugin instructs the AI to strip sensitive data from generated reports:
-- Replace absolute file paths with relative paths
-- Redact API keys, tokens, and credentials with `[REDACTED]`
-- Remove hostnames, IP addresses, and internal URLs
-- Exclude raw neural data samples, patient names, and subject identifiers
-- Omit organization names unless you explicitly opt in
+- This plugin contains **no network calls** and **stores no data**. But the AI agent hosting it sends conversation context (including scanned files) to its host API.
+- **Neural data is sensitive data** under GDPR (Art.9), CCPA (biometric), Chile Neurorights (organ tissue), and HIPAA (PHI when identifiable).
+- **Do not scan files containing real patient data, IRB-restricted data, or proprietary protocols** unless your data governance policy permits sending them to your AI platform.
+- **Report sanitization is best-effort** (AI-instruction-based, not deterministic). Always review reports before sharing externally.
+- **This is not a medical device.** Output does not satisfy FDA, EU MDR, or IEC certification requirements.
+- **This is not legal advice.** Compliance determinations require qualified legal counsel.
+- **Validation is your responsibility.** All findings require independent professional verification.
 
-This sanitization is performed by the AI following instructions, not by a deterministic code filter. It is a best-effort process. **Always review generated reports before sharing externally.**
+### Regulatory Frameworks Referenced
 
-**Validation is your responsibility.** This plugin produces draft analyses, not certified assessments. All findings require independent verification by qualified security professionals before acting on them. Do not use output from this plugin as the sole basis for clinical, regulatory, or procurement decisions, nor as a substitute for professional security engineering review.
-
-### Clinical & Regulated Use
-
-If you work in a clinical, research, or regulated environment:
-- **EEG and BCI signals may constitute Protected Health Information (PHI)** under HIPAA, or special category data under GDPR Article 9, when associated with identifiable individuals
-- **If you are a covered entity or business associate under HIPAA**, assess whether your use of this plugin — and your AI platform provider — requires a Business Associate Agreement
-- **If you are subject to GDPR**, verify that your organization's Data Processing Agreement with your AI platform provider covers Article 9 data before scanning neural data files
-- **IRB-approved research:** Consult your IRB and data governance office before using AI-assisted tools on codebases that reference human subjects data
-- This tool is **not a medical device** and does not constitute medical, clinical, or regulatory advice. Output does not satisfy any FDA premarket cybersecurity submission requirement, EU MDR cybersecurity requirement, or IEC 14971 risk management documentation requirement. Use in regulatory contexts requires independent review by a qualified regulatory affairs professional
+| Framework | Status | Jurisdiction |
+|-----------|--------|-------------|
+| GDPR | Enacted (2018) | EU/EEA |
+| CCPA/CPRA | Enacted (2020/2023) | California |
+| Chile Neurorights Law | Enacted (2021/2024) | Chile |
+| UNESCO Recommendation | Adopted/In development | International (non-binding) |
+| MIND Act | Proposed | US (not enacted) |
+| HIPAA | Enacted (1996) | US covered entities |
 
 ## Important Caveats
 
@@ -218,16 +250,23 @@ bci-security/
 │   ├── neuromodesty-check/        8 guardrail compliance checks
 │   ├── bci-threat-model/          Guided threat model generation
 │   ├── bci-scan/                  Passive code scanning
+│   ├── bci-compliance/            Regulatory compliance reports
 │   └── bci-learn/                 Interactive tutorials
 ├── agents/
 │   └── threat-modeler.md          Multi-step threat modeling agent
-├── hooks/hooks.json               Neural data file detection
+├── hooks/
+│   ├── hooks.json                 Hook configuration
+│   └── neural-data-guard.py       Neural data file detection script
 ├── data/
 │   ├── tara-techniques.json       135 techniques (~120 KB)
 │   ├── niss-device-scores.json    22 device scores
 │   ├── security-controls.json     Controls by hourglass band
 │   ├── guardrails.json            8 neuroethics guardrails
+│   ├── pii-patterns.json          18 PII detection patterns
+│   ├── regulatory-compliance.json 9 compliance domains, 5 frameworks
+│   ├── hardrails.json             Security hardrails framework
 │   └── samples/                   3 demo device configs
+├── LEGAL.md                       Legal notices & privacy disclaimer
 ├── LICENSE-CODE                   Apache 2.0
 └── LICENSE-DATA                   CC BY 4.0
 ```

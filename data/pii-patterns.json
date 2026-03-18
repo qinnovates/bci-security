@@ -1,0 +1,286 @@
+{
+  "_metadata": {
+    "title": "BCI PII Detection Patterns",
+    "version": "1.0.0",
+    "description": "Pattern-matching rules for detecting personally identifiable information in BCI data pipelines. Each pattern maps to one or more regulatory frameworks. Uses regex (PCRE-compatible) syntax.",
+    "license": "CC-BY-SA-4.0"
+  },
+  "categories": {
+    "direct_identifiers": {
+      "label": "Direct Identifiers",
+      "description": "Data elements that directly identify a natural person",
+      "severity": "critical",
+      "regulations": ["GDPR Art.4(1)", "CCPA 1798.140(o)", "Chile Neurorights Law Art.2"]
+    },
+    "neural_identifiers": {
+      "label": "Neural Identifiers",
+      "description": "Neural data that could identify or re-identify a person, including brainwave signatures and cognitive biomarkers",
+      "severity": "critical",
+      "regulations": ["GDPR Art.9", "Chile Neurorights Law Art.3", "UNESCO Recommendation Art.15", "Mind Act Sec.4"]
+    },
+    "quasi_identifiers": {
+      "label": "Quasi-Identifiers",
+      "description": "Data elements that could re-identify a person when combined with other data",
+      "severity": "high",
+      "regulations": ["GDPR Recital 26", "CCPA 1798.140(o)"]
+    },
+    "health_identifiers": {
+      "label": "Health/Clinical Identifiers",
+      "description": "Protected health information in BCI clinical contexts",
+      "severity": "critical",
+      "regulations": ["GDPR Art.9(1)", "HIPAA 164.514", "Mind Act Sec.5"]
+    },
+    "consent_gaps": {
+      "label": "Consent Documentation Gaps",
+      "description": "Missing or insufficient consent records for neural data processing",
+      "severity": "high",
+      "regulations": ["GDPR Art.6-7", "CCPA 1798.120", "Chile Neurorights Law Art.4", "UNESCO Recommendation Art.19", "Mind Act Sec.3"]
+    },
+    "retention_violations": {
+      "label": "Data Retention Violations",
+      "description": "Neural data stored beyond necessary retention periods or without deletion mechanisms",
+      "severity": "medium",
+      "regulations": ["GDPR Art.5(1)(e)", "CCPA 1798.105", "UNESCO Recommendation Art.16"]
+    }
+  },
+  "patterns": [
+    {
+      "id": "PII-001",
+      "name": "Email address in neural data pipeline",
+      "category": "direct_identifiers",
+      "pattern": "[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}",
+      "context": ["filename", "header", "metadata", "variable", "config", "log"],
+      "severity": "critical",
+      "description": "Email address detected in BCI data context. Direct identifier that links neural recordings to a natural person.",
+      "remediation": "Replace with anonymized subject ID (e.g., sub-001). Store the mapping in a separate, access-controlled lookup table.",
+      "regulations": ["GDPR Art.4(1)", "CCPA 1798.140(o)", "HIPAA 164.514(b)(2)(i)"]
+    },
+    {
+      "id": "PII-002",
+      "name": "Phone number in neural data pipeline",
+      "category": "direct_identifiers",
+      "pattern": "(\\+?1?[\\s.-]?)?\\(?[0-9]{3}\\)?[\\s.-]?[0-9]{3}[\\s.-]?[0-9]{4}",
+      "context": ["filename", "header", "metadata", "config", "log"],
+      "severity": "critical",
+      "description": "Phone number detected near BCI data references. Direct identifier.",
+      "remediation": "Remove from neural data pipeline. Store in separate identity management system.",
+      "regulations": ["GDPR Art.4(1)", "CCPA 1798.140(o)", "HIPAA 164.514(b)(2)(i)"]
+    },
+    {
+      "id": "PII-003",
+      "name": "Social Security / National ID number",
+      "category": "direct_identifiers",
+      "pattern": "\\b[0-9]{3}[\\s-]?[0-9]{2}[\\s-]?[0-9]{4}\\b",
+      "context": ["filename", "header", "metadata", "config", "log", "code"],
+      "severity": "critical",
+      "description": "Possible SSN/national ID number near BCI data. Highest-risk direct identifier.",
+      "remediation": "Immediately remove. National ID numbers must never appear in neural data pipelines.",
+      "regulations": ["GDPR Art.87", "CCPA 1798.140(o)", "HIPAA 164.514(b)(2)(i)"]
+    },
+    {
+      "id": "PII-004",
+      "name": "Person name in EEG/BCI filename",
+      "category": "direct_identifiers",
+      "pattern": "(?i)(john|jane|patient|subject|participant)[_\\s-]?[a-z]+\\.(edf|bdf|xdf|gdf|fif|nwb|csv|set)",
+      "context": ["filename"],
+      "severity": "critical",
+      "description": "Neural data filename appears to contain a person's name. Links recording to identity.",
+      "remediation": "Rename using BIDS convention: sub-<ID>_task-<task>_eeg.<ext>",
+      "regulations": ["GDPR Art.4(1)", "CCPA 1798.140(o)", "Chile Neurorights Law Art.3"]
+    },
+    {
+      "id": "PII-005",
+      "name": "Subject name in EDF/BDF header fields",
+      "category": "direct_identifiers",
+      "pattern": "(?i)(patient|subject|recording)\\s*(id|name|info)\\s*[:=]\\s*[A-Z][a-z]+",
+      "context": ["header", "metadata", "code"],
+      "severity": "critical",
+      "description": "Neural data file header contains identifiable subject information.",
+      "remediation": "Set patient_id to anonymized code. Use pyedflib: f.setPatientName('sub-001')",
+      "regulations": ["GDPR Art.4(1)", "HIPAA 164.514(b)(2)(i)", "Chile Neurorights Law Art.3"]
+    },
+    {
+      "id": "PII-006",
+      "name": "Date of birth in BCI context",
+      "category": "quasi_identifiers",
+      "pattern": "(?i)(dob|date.?of.?birth|birth.?date|born)\\s*[:=]?\\s*\\d{1,4}[/\\-.]\\d{1,2}[/\\-.]\\d{1,4}",
+      "context": ["header", "metadata", "config", "code"],
+      "severity": "high",
+      "description": "Date of birth near neural data context. Quasi-identifier that enables re-identification.",
+      "remediation": "Replace with age range or remove entirely. If clinically necessary, store in separate demographics file with access controls.",
+      "regulations": ["GDPR Recital 26", "HIPAA 164.514(b)(2)(i)", "CCPA 1798.140(o)"]
+    },
+    {
+      "id": "PII-007",
+      "name": "IP address in BCI data stream",
+      "category": "quasi_identifiers",
+      "pattern": "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b",
+      "context": ["config", "code", "log", "metadata"],
+      "severity": "high",
+      "description": "IP address in BCI data pipeline. Considered personal data under GDPR when it can identify a person.",
+      "remediation": "Use hostnames or anonymize IPs in logs. For LSL streams, bind to localhost where possible.",
+      "regulations": ["GDPR Art.4(1)", "CCPA 1798.140(o)"]
+    },
+    {
+      "id": "PII-008",
+      "name": "GPS/location coordinates in BCI context",
+      "category": "quasi_identifiers",
+      "pattern": "(?i)(lat|lon|latitude|longitude|location|coordinates)\\s*[:=]\\s*-?\\d+\\.\\d{4,}",
+      "context": ["config", "metadata", "code", "log"],
+      "severity": "high",
+      "description": "Geolocation data in BCI context. Enables physical identification of recording location/subject.",
+      "remediation": "Remove geolocation from neural data metadata. If needed for research, reduce precision to city level.",
+      "regulations": ["GDPR Art.4(1)", "CCPA 1798.140(o)"]
+    },
+    {
+      "id": "PII-009",
+      "name": "Device serial number linked to subject",
+      "category": "quasi_identifiers",
+      "pattern": "(?i)(serial|device.?id|hardware.?id|mac.?addr)\\s*[:=]\\s*[A-F0-9:]{8,}",
+      "context": ["config", "metadata", "code", "log"],
+      "severity": "medium",
+      "description": "Hardware identifier linked to BCI recordings. Can be used to track subjects across sessions.",
+      "remediation": "Hash device identifiers before storing with neural data. Use session-specific pseudonyms.",
+      "regulations": ["GDPR Art.4(1)", "CCPA 1798.140(o)"]
+    },
+    {
+      "id": "PII-010",
+      "name": "Neural biometric signature storage",
+      "category": "neural_identifiers",
+      "pattern": "(?i)(brain.?print|neural.?signature|eeg.?biometric|brain.?fingerprint|cognitive.?biometric|neural.?template|brain.?id)",
+      "context": ["code", "config", "metadata", "variable"],
+      "severity": "critical",
+      "description": "Neural biometric data detected. Brainwave signatures are unique identifiers under neurorights frameworks. Chile's Neurorights Law and UNESCO recommendations specifically protect neural data as biometric data requiring heightened safeguards.",
+      "remediation": "Neural biometric templates require: (1) explicit informed consent, (2) encryption at rest and in transit, (3) defined retention period, (4) right to deletion. Consider whether biometric use is proportionate to the purpose.",
+      "regulations": ["GDPR Art.9(1)", "Chile Neurorights Law Art.3-4", "UNESCO Recommendation Art.15", "Mind Act Sec.4-5", "CCPA 1798.140(o)"]
+    },
+    {
+      "id": "PII-011",
+      "name": "Cognitive state classification without consent gate",
+      "category": "neural_identifiers",
+      "pattern": "(?i)(emotion.?detect|mood.?classif|attention.?scor|stress.?level|cognitive.?state|mental.?state|thought.?decode|intent.?classif|fatigue.?detect|engagement.?scor)",
+      "context": ["code", "config", "variable"],
+      "severity": "critical",
+      "description": "Cognitive state classification detected. Inferring mental states from neural data triggers the highest protection tier under neurorights frameworks. The Mind Act and Chile Neurorights Law specifically protect mental privacy and cognitive liberty.",
+      "remediation": "Require explicit consent before cognitive classification. Document: (1) what states are classified, (2) purpose limitation, (3) accuracy limitations, (4) right to opt out. Never present inferred states as ground truth (see G1: Neuromodesty).",
+      "regulations": ["Chile Neurorights Law Art.3", "UNESCO Recommendation Art.15-16", "Mind Act Sec.3-4", "GDPR Art.22"]
+    },
+    {
+      "id": "PII-012",
+      "name": "Raw neural data export without anonymization",
+      "category": "neural_identifiers",
+      "pattern": "(?i)(export|save|write|dump|store).{0,30}(raw|unfiltered|original).{0,30}(eeg|neural|brain|bci|ecog|lfp)",
+      "context": ["code", "config"],
+      "severity": "high",
+      "description": "Raw neural data export without apparent anonymization step. Raw EEG contains biometric characteristics that persist across sessions and can re-identify subjects.",
+      "remediation": "Apply anonymization before export: (1) remove header PII, (2) strip timing metadata that could correlate with external events, (3) consider adding noise to prevent biometric re-identification if appropriate for the use case.",
+      "regulations": ["GDPR Art.9(1)", "Chile Neurorights Law Art.3", "UNESCO Recommendation Art.15"]
+    },
+    {
+      "id": "PII-013",
+      "name": "Clinical diagnosis in BCI metadata",
+      "category": "health_identifiers",
+      "pattern": "(?i)(diagnosis|icd.?10|dsm.?5|condition|disorder|epilepsy|depression|adhd|asd|ptsd|parkinson|als|stroke)\\s*[:=]",
+      "context": ["header", "metadata", "config", "filename"],
+      "severity": "critical",
+      "description": "Clinical diagnosis information linked to neural data. Health data paired with neural recordings creates highest-risk data category.",
+      "remediation": "Store clinical data separately from neural recordings. Link only via anonymized subject ID. Apply purpose limitation — clinical metadata should only be present in clinical analysis pipelines, not raw data exports.",
+      "regulations": ["GDPR Art.9(1)", "HIPAA 164.514(b)(2)(i)", "Mind Act Sec.5"]
+    },
+    {
+      "id": "PII-014",
+      "name": "Missing consent sidecar for neural data",
+      "category": "consent_gaps",
+      "pattern": "\\.(edf|bdf|xdf|gdf|fif|nwb)$",
+      "context": ["filename"],
+      "severity": "high",
+      "description": "Neural data file detected without corresponding .consent.json sidecar. All neurorights frameworks require documented consent for neural data processing.",
+      "remediation": "Create a .consent.json sidecar file containing: (1) consent_type (informed/broad/specific), (2) purpose, (3) date_obtained, (4) data_controller, (5) retention_period, (6) right_to_withdraw documented.",
+      "regulations": ["GDPR Art.6-7", "Chile Neurorights Law Art.4", "UNESCO Recommendation Art.19", "Mind Act Sec.3", "CCPA 1798.120"],
+      "check_type": "sidecar_exists",
+      "sidecar_pattern": ".consent.json"
+    },
+    {
+      "id": "PII-015",
+      "name": "Neural data processing without purpose limitation",
+      "category": "consent_gaps",
+      "pattern": "(?i)(general.?purpose|any.?use|unrestricted|no.?limit).{0,20}(neural|eeg|brain|bci)",
+      "context": ["config", "metadata", "code"],
+      "severity": "high",
+      "description": "Neural data processing without purpose limitation. GDPR, Chile Neurorights, and UNESCO all require that neural data processing be limited to the specific purpose for which consent was obtained.",
+      "remediation": "Define and enforce purpose limitation: (1) document specific processing purposes, (2) implement access controls per purpose, (3) audit data access against stated purposes.",
+      "regulations": ["GDPR Art.5(1)(b)", "Chile Neurorights Law Art.4", "UNESCO Recommendation Art.16"]
+    },
+    {
+      "id": "PII-016",
+      "name": "Neural data without retention policy",
+      "category": "retention_violations",
+      "pattern": "(?i)(retain|keep|store|archive).{0,30}(indefinite|forever|permanent|no.?expir).{0,20}(neural|eeg|brain|bci)",
+      "context": ["config", "metadata", "code", "policy"],
+      "severity": "medium",
+      "description": "Neural data stored without defined retention period. GDPR storage limitation principle and UNESCO recommendations require that data not be kept longer than necessary.",
+      "remediation": "Define retention period based on processing purpose. Implement automated deletion or anonymization at retention expiry. Document retention policy in data processing agreement.",
+      "regulations": ["GDPR Art.5(1)(e)", "UNESCO Recommendation Art.16", "CCPA 1798.105"]
+    },
+    {
+      "id": "PII-017",
+      "name": "Cross-border neural data transfer",
+      "category": "retention_violations",
+      "pattern": "(?i)(transfer|send|transmit|upload|sync).{0,30}(cloud|server|api|endpoint|s3|azure|gcp).{0,30}(neural|eeg|brain|bci)",
+      "context": ["code", "config"],
+      "severity": "high",
+      "description": "Neural data transfer to cloud/external service detected. Cross-border data transfers of neural data require adequacy decisions or appropriate safeguards under GDPR and additional protections under neurorights frameworks.",
+      "remediation": "Verify: (1) receiving jurisdiction has adequate data protection, (2) standard contractual clauses in place, (3) data processing agreement covers neural/biometric data, (4) transfer impact assessment completed.",
+      "regulations": ["GDPR Art.44-49", "Chile Neurorights Law Art.4", "UNESCO Recommendation Art.17"]
+    },
+    {
+      "id": "PII-018",
+      "name": "Neurostimulation parameters without safety bounds",
+      "category": "health_identifiers",
+      "pattern": "(?i)(stimulat|tdcs|tacs|tms|dbs|current|voltage|amplitude).{0,30}(set|config|param|level|intensity)(?!.{0,20}(limit|bound|max|safe|check|valid))",
+      "context": ["code", "config"],
+      "severity": "critical",
+      "description": "Neurostimulation parameters configured without apparent safety bounds. Physical safety is a prerequisite for all neurorights — the Mind Act and Chile law both protect physical and mental integrity.",
+      "remediation": "Implement safety bounds: (1) maximum current density limits per IEC 60601, (2) session duration limits, (3) cumulative dose tracking, (4) emergency shutoff mechanism. Document limits in device configuration.",
+      "regulations": ["Mind Act Sec.5", "Chile Neurorights Law Art.2", "UNESCO Recommendation Art.14"]
+    }
+  ],
+  "regulatory_frameworks": {
+    "GDPR": {
+      "full_name": "General Data Protection Regulation (EU) 2016/679",
+      "jurisdiction": "European Union + EEA",
+      "neural_data_classification": "Special category data under Art.9(1) when linked to identifiable persons — biometric data for identification, health data",
+      "key_articles": ["Art.4(1) — personal data definition", "Art.5 — processing principles", "Art.6-7 — lawful basis and consent", "Art.9 — special category data", "Art.22 — automated decision-making", "Art.44-49 — international transfers"],
+      "bci_relevance": "EEG data paired with identity = biometric data. Cognitive state inference = automated profiling. Both trigger Art.9 and Art.22 protections."
+    },
+    "CCPA": {
+      "full_name": "California Consumer Privacy Act / CPRA (2023 amendments)",
+      "jurisdiction": "California, USA",
+      "neural_data_classification": "Personal information under 1798.140(o); biometric information under 1798.140(c); sensitive personal information under 1798.140(ae)",
+      "key_sections": ["1798.140(o) — personal information definition", "1798.140(c) — biometric information", "1798.100 — right to know", "1798.105 — right to delete", "1798.120 — right to opt out"],
+      "bci_relevance": "Neural data is biometric information. CPRA amendments (2023) added 'sensitive personal information' category that includes biometrics."
+    },
+    "Chile_Neurorights": {
+      "full_name": "Chile Constitutional Amendment on Neurorights + Neurodata Protection Law (2021/2024)",
+      "jurisdiction": "Chile (first nation to constitutionalize neurorights)",
+      "neural_data_classification": "Brain data explicitly classified as organ tissue data requiring the highest protection level",
+      "key_articles": ["Art.2 — mental integrity as constitutional right", "Art.3 — neural data as organ tissue (not just personal data)", "Art.4 — consent requirements for neural data", "Art.5 — right to mental privacy"],
+      "bci_relevance": "First legal framework to treat neural data as categorically different from other personal data. Sets precedent for all neurorights legislation."
+    },
+    "UNESCO_Recommendation": {
+      "full_name": "UNESCO Recommendation on the Ethics of Neurotechnology (2025 draft / 2024 framework)",
+      "jurisdiction": "International (non-binding but normative)",
+      "neural_data_classification": "Neural data as requiring specific ethical governance beyond general data protection",
+      "key_articles": ["Art.14 — safety and risk assessment", "Art.15 — neural data protection", "Art.16 — purpose limitation and data minimization", "Art.17 — international governance", "Art.19 — informed consent for neurotechnology"],
+      "bci_relevance": "Global normative framework. Not legally binding but increasingly referenced in national legislation and corporate governance."
+    },
+    "Mind_Act": {
+      "full_name": "MIND Act (proposed US federal legislation — Moreno-inspired Neurodata Integrity and Digital Safety)",
+      "jurisdiction": "United States (proposed)",
+      "neural_data_classification": "Neural data as sensitive health data requiring specific protections",
+      "key_sections": ["Sec.3 — consent requirements for neural data collection", "Sec.4 — cognitive liberty protections", "Sec.5 — mental integrity and physical safety requirements"],
+      "bci_relevance": "Proposed US federal framework. Not yet enacted but signals regulatory direction. References Chile and UNESCO frameworks.",
+      "status": "Proposed legislation — not enacted. Referenced here for forward-looking compliance planning."
+    }
+  }
+}

@@ -1,0 +1,270 @@
+{
+  "_metadata": {
+    "title": "BCI Regulatory Compliance Requirements",
+    "version": "1.0.0",
+    "description": "Compliance requirements for BCI systems mapped across GDPR, CCPA, Chile Neurorights, UNESCO Recommendation, and Mind Act. Each requirement includes detection patterns, evidence criteria, and remediation guidance.",
+    "license": "CC-BY-SA-4.0",
+    "status": "Research reference. Requirements are derived from published regulatory text. This is not legal advice. Consult qualified legal counsel for compliance determinations."
+  },
+  "compliance_domains": [
+    {
+      "id": "CD-01",
+      "domain": "Data Classification",
+      "description": "Neural data must be properly classified under applicable regulatory frameworks",
+      "requirements": [
+        {
+          "id": "CD-01-01",
+          "requirement": "Neural data classified as special category / sensitive data",
+          "description": "EEG, ECoG, LFP, and other neural recordings linked to identifiable persons must be classified as biometric data (GDPR Art.9), sensitive personal information (CCPA), or organ tissue data (Chile Neurorights)",
+          "check": "Verify data classification policy exists and covers neural data types",
+          "severity": "critical",
+          "regulations": ["GDPR Art.9(1)", "CCPA 1798.140(ae)", "Chile Neurorights Law Art.3"],
+          "evidence": ["Data classification policy document", "Neural data handling procedures", "Data inventory including neural data types"]
+        },
+        {
+          "id": "CD-01-02",
+          "requirement": "Cognitive inference outputs classified as derived sensitive data",
+          "description": "Outputs from cognitive state classification (emotion detection, attention scoring, mental state inference) must be classified at the same protection level as the source neural data",
+          "check": "Verify derived data classification covers cognitive inference outputs",
+          "severity": "critical",
+          "regulations": ["GDPR Art.22", "Chile Neurorights Law Art.3", "UNESCO Recommendation Art.15", "Mind Act Sec.4"],
+          "evidence": ["Derived data classification policy", "Cognitive inference pipeline documentation"]
+        }
+      ]
+    },
+    {
+      "id": "CD-02",
+      "domain": "Consent Management",
+      "description": "Valid, informed consent must be obtained before neural data collection and processing",
+      "requirements": [
+        {
+          "id": "CD-02-01",
+          "requirement": "Explicit informed consent for neural data collection",
+          "description": "Consent must be freely given, specific, informed, and unambiguous. For neural data, consent must explain: what data is collected, how it will be processed, who has access, retention period, and right to withdraw",
+          "check": "Verify consent mechanism exists and covers all required elements",
+          "severity": "critical",
+          "regulations": ["GDPR Art.6-7", "Chile Neurorights Law Art.4", "UNESCO Recommendation Art.19", "Mind Act Sec.3"],
+          "evidence": ["Consent form or UI flow", "Consent records database", "Withdrawal mechanism"]
+        },
+        {
+          "id": "CD-02-02",
+          "requirement": "Separate consent for cognitive state inference",
+          "description": "If the system infers cognitive states (emotions, attention, fatigue, intent) from neural data, separate consent is required for this processing beyond raw data collection",
+          "check": "Verify separate consent for cognitive inference processing exists",
+          "severity": "critical",
+          "regulations": ["GDPR Art.22", "Chile Neurorights Law Art.3-4", "Mind Act Sec.4"],
+          "evidence": ["Cognitive inference consent mechanism", "Purpose limitation documentation"]
+        },
+        {
+          "id": "CD-02-03",
+          "requirement": "Right to withdraw consent and data deletion",
+          "description": "Users must be able to withdraw consent and request deletion of their neural data at any time, with deletion completed within regulatory timeframes",
+          "check": "Verify withdrawal mechanism and deletion pipeline exist",
+          "severity": "high",
+          "regulations": ["GDPR Art.7(3), Art.17", "CCPA 1798.105", "Chile Neurorights Law Art.4", "UNESCO Recommendation Art.19"],
+          "evidence": ["Withdrawal UI/mechanism", "Deletion pipeline documentation", "Deletion verification logs"]
+        }
+      ]
+    },
+    {
+      "id": "CD-03",
+      "domain": "Data Minimization & Purpose Limitation",
+      "description": "Neural data collection and processing must be limited to what is necessary for the stated purpose",
+      "requirements": [
+        {
+          "id": "CD-03-01",
+          "requirement": "Neural data collection limited to stated purpose",
+          "description": "Only collect neural signals necessary for the declared purpose. Do not collect broader frequency bands, longer durations, or more channels than required",
+          "check": "Verify data collection scope matches stated purpose",
+          "severity": "high",
+          "regulations": ["GDPR Art.5(1)(b-c)", "UNESCO Recommendation Art.16", "Mind Act Sec.3"],
+          "evidence": ["Purpose statement", "Data collection specification", "Channel/frequency justification"]
+        },
+        {
+          "id": "CD-03-02",
+          "requirement": "No secondary use without additional consent",
+          "description": "Neural data collected for one purpose (e.g., neurofeedback therapy) must not be reused for another (e.g., marketing, research, training AI models) without obtaining new consent",
+          "check": "Verify purpose limitation controls and secondary use policy",
+          "severity": "critical",
+          "regulations": ["GDPR Art.5(1)(b)", "Chile Neurorights Law Art.4", "UNESCO Recommendation Art.16"],
+          "evidence": ["Purpose limitation policy", "Access control by purpose", "Secondary use consent mechanism"]
+        }
+      ]
+    },
+    {
+      "id": "CD-04",
+      "domain": "Technical Security Controls",
+      "description": "Appropriate technical measures to protect neural data confidentiality, integrity, and availability",
+      "requirements": [
+        {
+          "id": "CD-04-01",
+          "requirement": "Encryption of neural data in transit",
+          "description": "All neural data transmissions must be encrypted. Unencrypted protocols (raw LSL, unencrypted BLE, HTTP) are non-compliant for any identifiable neural data",
+          "check": "Scan for unencrypted neural data transport patterns",
+          "severity": "critical",
+          "regulations": ["GDPR Art.32(1)(a)", "CCPA 1798.150", "Chile Neurorights Law Art.4"],
+          "evidence": ["Transport encryption configuration", "TLS/encryption certificates", "Protocol audit results"],
+          "detection_patterns": ["PII-007", "Rule 1: Transport Security"]
+        },
+        {
+          "id": "CD-04-02",
+          "requirement": "Encryption of neural data at rest",
+          "description": "Stored neural data files must be encrypted. Unencrypted EDF/BDF/XDF files containing identifiable data are non-compliant",
+          "check": "Verify storage encryption for neural data files",
+          "severity": "high",
+          "regulations": ["GDPR Art.32(1)(a)", "CCPA 1798.150"],
+          "evidence": ["Storage encryption configuration", "File system encryption status", "Key management documentation"]
+        },
+        {
+          "id": "CD-04-03",
+          "requirement": "Access controls for neural data",
+          "description": "Neural data access must be restricted to authorized personnel with documented justification. Principle of least privilege applies",
+          "check": "Verify access control mechanisms for neural data stores",
+          "severity": "high",
+          "regulations": ["GDPR Art.32(1)(b)", "CCPA 1798.150", "Mind Act Sec.5"],
+          "evidence": ["Access control policy", "Role-based access configuration", "Access audit logs"]
+        },
+        {
+          "id": "CD-04-04",
+          "requirement": "Neurostimulation safety bounds",
+          "description": "Devices that deliver stimulation must implement hardware and software safety limits to protect physical and mental integrity",
+          "check": "Verify stimulation parameter limits and emergency shutoff",
+          "severity": "critical",
+          "regulations": ["Mind Act Sec.5", "Chile Neurorights Law Art.2", "UNESCO Recommendation Art.14"],
+          "evidence": ["Safety bound configuration", "Emergency shutoff mechanism", "IEC 60601 compliance documentation"],
+          "detection_patterns": ["PII-018"]
+        }
+      ]
+    },
+    {
+      "id": "CD-05",
+      "domain": "Anonymization & De-identification",
+      "description": "Neural data must be anonymized when identification is not necessary for the processing purpose",
+      "requirements": [
+        {
+          "id": "CD-05-01",
+          "requirement": "Anonymization of neural data for research/analytics",
+          "description": "When neural data is used for research, training, or analytics where individual identification is not needed, data must be anonymized to prevent re-identification",
+          "check": "Verify anonymization procedures for non-clinical neural data use",
+          "severity": "high",
+          "regulations": ["GDPR Art.89, Recital 26", "CCPA 1798.145(a)(5)"],
+          "evidence": ["Anonymization procedure documentation", "Re-identification risk assessment", "Anonymization verification results"]
+        },
+        {
+          "id": "CD-05-02",
+          "requirement": "Neural biometric template protection",
+          "description": "If the system creates or stores neural biometric templates (brainwave signatures, EEG fingerprints), these require the highest protection level including encryption, access controls, and defined retention",
+          "check": "Verify neural biometric template handling procedures",
+          "severity": "critical",
+          "regulations": ["GDPR Art.9(1)", "Chile Neurorights Law Art.3", "Mind Act Sec.4"],
+          "evidence": ["Biometric template storage policy", "Encryption verification", "Retention schedule"],
+          "detection_patterns": ["PII-010"]
+        }
+      ]
+    },
+    {
+      "id": "CD-06",
+      "domain": "Cognitive Liberty & Mental Privacy",
+      "description": "Protection of cognitive autonomy and prevention of unauthorized mental state inference",
+      "requirements": [
+        {
+          "id": "CD-06-01",
+          "requirement": "Cognitive liberty protection",
+          "description": "The system must not coerce, manipulate, or unduly influence cognitive processes. Neurofeedback and stimulation must preserve user autonomy and agency",
+          "check": "Verify cognitive autonomy protections in system design",
+          "severity": "critical",
+          "regulations": ["Chile Neurorights Law Art.2", "UNESCO Recommendation Art.14-15", "Mind Act Sec.4"],
+          "evidence": ["Cognitive autonomy impact assessment", "User override/opt-out mechanisms", "Algorithmic transparency documentation"]
+        },
+        {
+          "id": "CD-06-02",
+          "requirement": "Mental privacy — no unauthorized inference",
+          "description": "The system must not infer mental states, preferences, or cognitive patterns beyond what the user has explicitly consented to. Incidental inference must be discarded, not stored or used",
+          "check": "Verify mental privacy controls on inference pipelines",
+          "severity": "critical",
+          "regulations": ["Chile Neurorights Law Art.5", "UNESCO Recommendation Art.15", "Mind Act Sec.4"],
+          "evidence": ["Inference scope documentation", "Incidental data disposal policy", "Privacy impact assessment"]
+        }
+      ]
+    },
+    {
+      "id": "CD-07",
+      "domain": "Cross-Border Transfer & Third-Party Sharing",
+      "description": "Neural data transfers to third parties or across jurisdictions must meet regulatory requirements",
+      "requirements": [
+        {
+          "id": "CD-07-01",
+          "requirement": "Cross-border transfer safeguards for neural data",
+          "description": "Transfers of neural data to jurisdictions without adequate protection require appropriate safeguards (standard contractual clauses, binding corporate rules, or adequacy decisions)",
+          "check": "Verify transfer mechanisms for neural data crossing jurisdictional boundaries",
+          "severity": "high",
+          "regulations": ["GDPR Art.44-49", "Chile Neurorights Law Art.4", "UNESCO Recommendation Art.17"],
+          "evidence": ["Data transfer impact assessment", "Standard contractual clauses", "Adequacy decision documentation"]
+        },
+        {
+          "id": "CD-07-02",
+          "requirement": "Third-party neural data sharing agreements",
+          "description": "Any sharing of neural data with third parties (cloud providers, analytics services, research partners) requires documented agreements covering data protection obligations",
+          "check": "Verify data processing agreements with all third parties receiving neural data",
+          "severity": "high",
+          "regulations": ["GDPR Art.28", "CCPA 1798.140(w)", "UNESCO Recommendation Art.17"],
+          "evidence": ["Data processing agreements", "Third-party inventory", "Sub-processor documentation"]
+        }
+      ]
+    },
+    {
+      "id": "CD-08",
+      "domain": "Incident Response & Breach Notification",
+      "description": "Procedures for responding to neural data breaches and security incidents",
+      "requirements": [
+        {
+          "id": "CD-08-01",
+          "requirement": "Neural data breach notification procedures",
+          "description": "Breaches involving neural data must be reported to supervisory authorities within regulatory timeframes (72 hours under GDPR) and to affected individuals when high risk exists",
+          "check": "Verify breach notification procedures cover neural data incidents",
+          "severity": "high",
+          "regulations": ["GDPR Art.33-34", "CCPA 1798.150"],
+          "evidence": ["Incident response plan covering neural data", "Breach notification templates", "Notification timeline procedures"]
+        }
+      ]
+    },
+    {
+      "id": "CD-09",
+      "domain": "Algorithmic Transparency & Explainability",
+      "description": "Automated decisions based on neural data must be transparent and explainable",
+      "requirements": [
+        {
+          "id": "CD-09-01",
+          "requirement": "Transparency of neural data processing algorithms",
+          "description": "Users must be informed about how their neural data is processed, what algorithms are used, and what decisions or outputs are derived from their data",
+          "check": "Verify algorithmic transparency documentation for neural data processing",
+          "severity": "high",
+          "regulations": ["GDPR Art.13-14, Art.22", "UNESCO Recommendation Art.15-16", "Mind Act Sec.4"],
+          "evidence": ["Algorithm documentation", "User-facing explanation of processing", "Model card or similar transparency artifact"]
+        }
+      ]
+    }
+  ],
+  "risk_levels": {
+    "critical": {
+      "label": "Critical",
+      "description": "Non-compliance creates immediate legal liability or physical safety risk. Must be addressed before deployment.",
+      "sla": "Immediate remediation required"
+    },
+    "high": {
+      "label": "High",
+      "description": "Non-compliance creates significant regulatory risk or privacy harm. Should be addressed within current development cycle.",
+      "sla": "Address within current sprint/cycle"
+    },
+    "medium": {
+      "label": "Medium",
+      "description": "Non-compliance creates moderate risk. Should be addressed within next planning period.",
+      "sla": "Address within next planning period"
+    },
+    "low": {
+      "label": "Low",
+      "description": "Best practice recommendation. Non-compliance creates minimal immediate risk but may increase exposure over time.",
+      "sla": "Address when convenient"
+    }
+  }
+}

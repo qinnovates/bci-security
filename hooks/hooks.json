@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -c \"import sys, json; t=json.load(sys.stdin); f=t.get('tool_input',{}).get('file_path',''); exts=['.edf','.bdf','.xdf','.gdf','.fif','.nwb']; ext=next((e for e in exts if f.lower().endswith(e)),''); print(json.dumps({'result':'warn','message':'Neural data file detected ('+ext+' format). Verify: (1) anonymized subject ID, (2) restricted file permissions, (3) consent metadata exists. Consider adding a .consent.json sidecar file.'})) if ext else print(json.dumps({}))\""
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/neural-data-guard.py"
           }
         ],
         "matcher": "Write|Edit"
