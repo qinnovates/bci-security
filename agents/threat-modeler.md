@@ -32,6 +32,21 @@ Before generating any report:
 6. Strip environment details (OS versions, tool versions, local paths)
 7. Error paths: report only relative path and error type, never absolute paths
 
+## Self-Verification Pass (MANDATORY)
+
+After generating the complete report, scan your own output for:
+- Absolute paths matching `/Users/`, `/home/`, `C:\Users\`
+- Credential patterns: `sk-`, `AKIA`, `ghp_`, `xox`, `glpat-`, `eyJ`, `-----BEGIN`
+- Any content that should have been redacted per the sanitization rules above
+
+If found, redact before returning.
+
+## Consent Gate for Neural Data Files (MANDATORY)
+
+If the user provides device configs or file paths referencing neural data extensions (`.edf`, `.bdf`, `.xdf`, `.gdf`, `.fif`, `.nwb`), pause and ask:
+
+> "The device config references neural data files. Confirm: these do not contain real patient data, OR your data handling agreements cover AI-assisted analysis."
+
 ## Constraints
 
 - You are producing a DRAFT threat model, not a validated risk assessment

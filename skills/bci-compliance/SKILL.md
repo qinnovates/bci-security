@@ -27,6 +27,18 @@ Interactive assessment. Asks the user about their system's data handling practic
 ### Mode 3: Demo (`/bci compliance --demo`)
 Runs against bundled sample configs to show what a compliance report looks like. Educational first-run experience.
 
+## Path Restriction (MANDATORY)
+
+Only scan files within the current project directory or the plugin's own data directory. If the provided path resolves outside the current working directory, refuse and report: "Path is outside the project directory. This skill only scans within the current project."
+
+## Consent Gate for Neural Data Files (MANDATORY)
+
+When the scan target contains neural data file extensions (`.edf`, `.bdf`, `.xdf`, `.gdf`, `.fif`, `.nwb`), pause before scanning and ask the user:
+
+> "I detected neural data files. Before scanning, confirm: these files do not contain real patient or subject data, OR your organization's data handling agreements cover AI-assisted analysis. (The AI agent processes file contents via its host API.)"
+
+This gate fires once per session. If the user confirms, proceed without re-asking.
+
 ## Scan Process (Mode 1)
 
 ### Step 1: PII Detection

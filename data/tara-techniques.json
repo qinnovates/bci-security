@@ -1,6 +1,7 @@
 {
   "version": "1.0.0",
   "total": 135,
+  "_schema_notes": "Each technique has TWO severity assessments: (1) top-level 'severity' is editorially assigned tactical severity (how bad if it succeeds), (2) 'niss.severity' is computed from the NISS vector measuring biological/neural signal disruption. These may differ — a man-in-the-middle attack is tactically critical but has low biological impact (NISS 2.7). When presenting both, clarify which is which.",
   "techniques": [
     {
       "id": "QIF-T0001",

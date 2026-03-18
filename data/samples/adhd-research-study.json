@@ -51,7 +51,7 @@
   "neural_processing": {
     "_violation_PII010": "Neural biometric storage — triggers PII-010",
     "brain_fingerprint_enabled": true,
-    "eeg_biometric_template_path": "/data/templates/neural_signatures/",
+    "eeg_biometric_template_path": "[path-to-neural-signature-templates]",
 
     "_violation_PII011": "Cognitive state classification — triggers PII-011",
     "attention_scoring": true,

@@ -14,6 +14,10 @@ Guide the user through a structured threat modeling process for their BCI system
 - Security controls: `${CLAUDE_PLUGIN_ROOT}/data/security-controls.json`
 - Guardrails: `${CLAUDE_PLUGIN_ROOT}/data/guardrails.json`
 
+## Path Restriction (MANDATORY)
+
+Only process files within the current project directory or the plugin's own data directory. If the user provides a path that resolves outside the current working directory, refuse and report: "Path is outside the project directory."
+
 ## Step 1: Device Profile (ask the user)
 
 Ask these 4 questions:

@@ -60,8 +60,8 @@ eeg_df.to_csv("participant_Jane_Doe_resting.csv")
 # ===== Rule 3: API Credentials =====
 
 # Hardcoded Emotiv API key
-EMOTIV_API_KEY = "ek_live_abc123def456ghi789jkl012mno345"
-CORTEX_CLIENT_SECRET = "cs_9f8e7d6c5b4a3210"
+EMOTIV_API_KEY = "<REPLACE-WITH-YOUR-EMOTIV-API-KEY>"
+CORTEX_CLIENT_SECRET = "<REPLACE-WITH-YOUR-CORTEX-SECRET>"
 
 # HTTP endpoint for neural data upload (not HTTPS)
 import requests
