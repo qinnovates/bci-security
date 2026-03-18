@@ -1,6 +1,6 @@
 ---
-description: BCI security toolkit — threat modeling, code scanning, and neuroethics compliance for brain-computer interfaces
-argument-hint: [scan|explain|report|learn|glossary] [args]
+description: "BCI security toolkit — threat modeling, code scanning, and neuroethics compliance for brain-computer interfaces"
+argument-hint: "scan|explain|report|compliance|anonymize|learn|glossary [args]"
 allowed-tools: [Read, Glob, Grep]
 ---
 
