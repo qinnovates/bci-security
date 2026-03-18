@@ -12,25 +12,30 @@ No external dependencies. No API keys. No server to run.
 
 ## Installation
 
-### From GitHub (recommended)
+### Claude Code
 ```bash
-# Clone the repo
-git clone https://github.com/qinnovates/bci-security.git
+# Add the BCI Security marketplace
+claude plugins marketplace add https://github.com/qinnovates/bci-security.git
 
-# Install as a local Claude Code plugin
-claude plugins install --scope user ./bci-security
-```
+# Install the plugin
+claude plugins install bci-security
 
-### From the Claude Code Marketplace (coming soon)
-```bash
-claude plugins install bci-security@qinnovates
-```
-
-### Verify installation
-```bash
+# Verify
 claude plugins list
-# Should show: bci-security (enabled)
+# Should show: bci-security@bci-security ✔ enabled
 ```
+
+### Other AI Coding Platforms
+The plugin is pure markdown and JSON. No compiled code, no runtime dependencies. Clone the repo and adapt the `skills/` directory to your platform's skill format:
+
+```bash
+git clone https://github.com/qinnovates/bci-security.git
+```
+
+Each `skills/*/SKILL.md` file is a self-contained instruction set. Copy it into your platform's skill directory, or paste it directly into your AI conversation along with the relevant `data/*.json` file.
+
+### Manual Use (Any AI)
+Copy the contents of any SKILL.md file and the relevant data JSON into your AI conversation. The instructions work with any model that can read files and follow structured prompts.
 
 Then start a new Claude Code session and run `/bci-scan --demo`.
 
