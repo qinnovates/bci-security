@@ -1,5 +1,7 @@
 # BCI Security
 
+> **Moved to [bci-security/plugin](https://github.com/bci-security/plugin).** This repo ([qinnovates/bci-security](https://github.com/qinnovates/bci-security)) is the original archive with full version history.
+
 BCI security toolkit for researchers, developers, and engineers. Threat modeling, vulnerability scoring, pattern detection, and neuroethics compliance for brain-computer interfaces.
 
 To our knowledge, no other tool provides structured neurosecurity analysis — threat taxonomies, neural impact scoring, or neuroethics compliance checking — inside an AI coding platform. As of March 2026, we are unaware of any equivalent in any AI coding platform marketplace.
@@ -23,7 +25,7 @@ No external dependencies. No API keys. No server to run. **No network calls.** T
 ### Claude Code
 ```bash
 # Add the BCI Security marketplace
-claude plugins marketplace add https://github.com/qinnovates/bci-security.git
+claude plugins marketplace add https://github.com/bci-security/plugin.git
 
 # Install the plugin
 claude plugins install bci-security
@@ -44,11 +46,44 @@ claude plugins update bci-security
 # Then restart Claude Code
 ```
 
+### MCP Server (Any MCP Client)
+
+Works with Cursor, Windsurf, VS Code, and any MCP-compatible client.
+
+```bash
+# Clone the repo
+git clone https://github.com/bci-security/plugin.git
+cd plugin/mcp-server
+
+# Install and build
+npm install
+npm run build
+
+# Add to your MCP client config (e.g., claude_desktop_config.json):
+```
+
+```json
+{
+  "mcpServers": {
+    "bci-security": {
+      "command": "node",
+      "args": ["/path/to/plugin/mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+**8 tools:** `tara_lookup`, `niss_score`, `bci_scan`, `bci_compliance`, `bci_threat_model`, `bci_anonymize`, `neuromodesty_check`, `bci_learn`
+
+**7 resources:** TARA techniques, PII patterns, NISS device scores, regulatory compliance, neuroethics guardrails, security controls, hardrails framework
+
+**Security:** No file system access beyond bundled data. No network calls. No shell execution. All inputs validated with Zod. All outputs sanitized (credentials redacted, paths stripped). Prompt injection detection on all user-supplied strings.
+
 ### Other AI Coding Platforms
 The plugin is pure markdown and JSON. No compiled code, no runtime dependencies. Clone the repo and adapt the `skills/` directory to your platform's skill format:
 
 ```bash
-git clone https://github.com/qinnovates/bci-security.git
+git clone https://github.com/bci-security/plugin.git
 ```
 
 Each `skills/*/SKILL.md` file is a self-contained instruction set. Copy it into your platform's skill directory, or paste it directly into your AI conversation along with the relevant `data/*.json` file.
@@ -409,6 +444,16 @@ bci-security/
 │   ├── regulatory-compliance.json 9 compliance domains, 5 frameworks
 │   ├── hardrails.json             Security hardrails framework (design reference, not loaded at runtime)
 │   └── samples/                   5 demo files (3 device configs + study + vuln script)
+├── mcp-server/                    MCP server (any MCP client)
+│   ├── src/
+│   │   ├── index.ts               Server entry point (stdio transport)
+│   │   ├── tools/                 8 tool implementations
+│   │   ├── resources/             7 resource definitions
+│   │   ├── security/              Injection, credential, sanitizer, path-guard, validator
+│   │   ├── data/                  Typed JSON loader with validation
+│   │   └── types/                 TypeScript type definitions
+│   ├── package.json
+│   └── tsconfig.json
 ├── docs/
 │   ├── SAFETY.md                  Canonical security specification
 │   ├── ARCHITECTURE.md            Component map & data flow
@@ -417,6 +462,10 @@ bci-security/
 ├── LICENSE-CODE                   Apache 2.0
 └── LICENSE-DATA                   CC BY 4.0
 ```
+
+## Version History
+
+Full version history is available at the [original archive repo](https://github.com/qinnovates/bci-security).
 
 ## Built By
 
