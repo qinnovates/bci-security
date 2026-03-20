@@ -1,0 +1,232 @@
+rules:
+  # =====================================================
+  # BCI Security Semgrep Rules
+  # Custom rules for brain-computer interface code
+  # =====================================================
+
+  # --- Unencrypted Neural Data Transport ---
+
+  - id: bci-unencrypted-lsl-stream
+    pattern: pylsl.StreamOutlet(...)
+    message: >
+      LSL stream created without encryption. Neural data transmitted via LSL
+      is unencrypted by default. Use TLS/DTLS wrapping or encrypt payload
+      before streaming. TARA: QIF-T0003 (Eavesdropping).
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: CWE-319
+      owasp: A02:2021
+      tara: QIF-T0003
+      category: security
+
+  - id: bci-unencrypted-brainflow-stream
+    patterns:
+      - pattern: BoardShim(...)
+      - pattern-not-inside: |
+          ... .enable_board_logger() ...
+    message: >
+      BrainFlow board initialized. Ensure data transport uses encryption.
+      BrainFlow streams are unencrypted by default over Bluetooth/WiFi/USB.
+      TARA: QIF-T0003.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: CWE-319
+      tara: QIF-T0003
+      category: security
+
+  # --- Neural Data PII ---
+
+  - id: bci-patient-name-in-edf-header
+    pattern: |
+      $F.setPatientName($NAME)
+    message: >
+      Patient name set in EDF header. Neural data files should use anonymized
+      subject IDs (e.g., sub-001), not real names. GDPR Art.4(1), Chile
+      Neurorights Law Art.3.
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: CWE-359
+      category: security
+
+  - id: bci-raw-eeg-export-no-anonymize
+    patterns:
+      - pattern: |
+          $RAW.save($PATH, ...)
+      - metavariable-regex:
+          metavariable: $RAW
+          regex: (raw|epochs|evoked)
+    message: >
+      MNE raw/epochs data saved without visible anonymization step.
+      Raw EEG contains biometric characteristics. Apply
+      mne.io.anonymize_info() before saving.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: CWE-359
+      category: security
+
+  # --- Unsafe Deserialization of Neural Data ---
+
+  - id: bci-pickle-neural-data
+    patterns:
+      - pattern: pickle.load(...)
+      - pattern-inside: |
+          ... import $BCI_LIB ...
+          ...
+      - metavariable-regex:
+          metavariable: $BCI_LIB
+          regex: (mne|pylsl|brainflow|pyedflib|pynwb)
+    message: >
+      Pickle deserialization in BCI pipeline. If the pickle file is from an
+      untrusted source, this is arbitrary code execution (CWE-502).
+      Use MNE's native .fif format or NWB's HDF5 format instead.
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: CWE-502
+      owasp: A08:2021
+      category: security
+
+  # --- Neurostimulation Safety ---
+
+  - id: bci-stimulation-no-bounds
+    patterns:
+      - pattern: |
+          $STIM.set_amplitude($AMP)
+      - pattern-not-inside: |
+          if $AMP > ... :
+              ...
+          ...
+          $STIM.set_amplitude($AMP)
+    message: >
+      Neurostimulation amplitude set without visible bounds check.
+      IEC 60601 requires maximum current density limits. Implement
+      safety bounds before setting stimulation parameters.
+      TARA: QIF-T0001 (Signal Injection).
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: CWE-20
+      tara: QIF-T0001
+      category: security
+
+  - id: bci-dbs-parameters-hardcoded
+    pattern: |
+      $DBS.set_parameters(voltage=$V, frequency=$F, pulse_width=$PW)
+    message: >
+      DBS parameters hardcoded. Deep brain stimulation parameters should be
+      loaded from a validated configuration file with safety bounds, not
+      hardcoded in source. TARA: QIF-T0001.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: CWE-798
+      tara: QIF-T0001
+      category: security
+
+  # --- Cognitive State Classification ---
+
+  - id: bci-cognitive-state-no-consent
+    pattern-either:
+      - pattern: |
+          $MODEL.predict($EEG_DATA)
+      - pattern: |
+          $CLASSIFIER.classify($NEURAL_DATA)
+    message: >
+      Cognitive state classification detected. Inferring mental states from
+      neural data triggers the highest protection tier under neurorights
+      frameworks. Require explicit consent and document purpose limitation.
+      Chile Neurorights Law Art.3, UNESCO Art.15-16.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: CWE-359
+      category: security
+
+  # --- BCI Network Security ---
+
+  - id: bci-bluetooth-no-encryption
+    pattern-either:
+      - pattern: |
+          bleak.BleakClient($ADDR)
+      - pattern: |
+          BLEDevice(...)
+    message: >
+      BLE connection to BCI device without visible encryption configuration.
+      BLE has limited encryption key size and is susceptible to GATT
+      enumeration. Use bonded pairing with LESC. TARA: QIF-T0003.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: CWE-319
+      tara: QIF-T0003
+      category: security
+
+  - id: bci-openbci-wifi-default-creds
+    pattern: |
+      OpenBCIWiFi($IP, ...)
+    message: >
+      OpenBCI WiFi Shield connection. Default credentials on OpenBCI WiFi
+      boards allow unauthenticated access. Change default SSID and password.
+      TARA: QIF-T0004 (Man-in-the-Middle).
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: CWE-798
+      tara: QIF-T0004
+      category: security
+
+  # --- Cloud API Security ---
+
+  - id: bci-neural-data-to-cloud-api
+    patterns:
+      - pattern: |
+          requests.post($URL, data=$DATA, ...)
+      - metavariable-regex:
+          metavariable: $DATA
+          regex: (eeg|neural|brain|bci|raw|epochs)
+    message: >
+      Neural data sent to cloud API. Cross-border data transfers of neural
+      data require adequacy decisions or SCCs under GDPR Art.44-49.
+      Verify data protection agreement covers neural/biometric data.
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: CWE-319
+      owasp: A02:2021
+      category: security
+
+  # --- Firmware / Embedded (C) ---
+
+  - id: bci-firmware-buffer-overflow
+    pattern-either:
+      - pattern: |
+          strcpy($DST, $SRC)
+      - pattern: |
+          sprintf($BUF, $FMT, ...)
+    message: >
+      Unbounded string operation in BCI firmware. Buffer overflow in
+      medical device firmware can cause safety-critical failures.
+      Use strncpy/snprintf with explicit bounds.
+    languages: [c]
+    severity: ERROR
+    metadata:
+      cwe: CWE-787
+      category: security
+
+  - id: bci-firmware-no-null-check-malloc
+    pattern: |
+      $PTR = malloc(...);
+      *$PTR = ...;
+    message: >
+      malloc() result used without NULL check in BCI firmware.
+      Memory allocation failure in a medical device can cause
+      undefined behavior. Always check malloc() != NULL.
+    languages: [c]
+    severity: ERROR
+    metadata:
+      cwe: CWE-476
+      category: security

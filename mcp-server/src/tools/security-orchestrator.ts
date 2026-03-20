@@ -17,8 +17,13 @@
 
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, writeFileSync, unlinkSync, rmdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+// Custom BCI Semgrep rules: mcp-server/src/tools -> ../../rules
+const BCI_RULES_DIR = join(__dirname, "..", "..", "rules");
 import { sanitizeReport } from "../security/sanitizer.js";
 import { audit } from "../security/audit.js";
 import type { ToolResult } from "../types/index.js";
@@ -65,16 +70,24 @@ function runSemgrep(code: string, language: string): ExternalFinding[] {
   try {
     writeFileSync(tmpFile, code, "utf-8");
 
+    // Build config args: always use BCI rules if they exist, add auto for broader coverage
+    const configArgs: string[] = [];
+    if (existsSync(join(BCI_RULES_DIR, "bci-security.yaml"))) {
+      configArgs.push("--config", join(BCI_RULES_DIR, "bci-security.yaml"));
+    }
+    // Use p/default for OWASP/CWE coverage (Semgrep's curated default ruleset)
+    configArgs.push("--config=p/default");
+
     const result = execFileSync("semgrep", [
       "scan",
       "--json",
       "--metrics=off",
-      "--config=auto",
       "--quiet",
+      ...configArgs,
       tmpFile,
     ], {
       encoding: "utf-8",
-      timeout: 60000,
+      timeout: 120000,
       env: { ...process.env, SEMGREP_SEND_METRICS: "off" },
     });
 
@@ -245,6 +258,170 @@ function mapGrypeSeverity(sev: string): ExternalFinding["severity"] {
 }
 
 /**
+ * Run TruffleHog on code string for deep secrets detection.
+ * MANDATORY: --no-verification prevents live API calls with found credentials.
+ */
+function runTrufflehog(code: string): ExternalFinding[] {
+  if (!toolExists("trufflehog")) return [];
+
+  const tmpDir = mkdtempSync(join(tmpdir(), "bci-scan-"));
+  const tmpFile = join(tmpDir, "scan.txt");
+
+  try {
+    writeFileSync(tmpFile, code, "utf-8");
+
+    const result = execFileSync("trufflehog", [
+      "filesystem",
+      tmpDir,
+      "--json",
+      "--no-verification",  // MANDATORY — prevents calling external APIs with found creds
+      "--no-update",        // No update check
+    ], {
+      encoding: "utf-8",
+      timeout: 60000,
+    });
+
+    const findings: ExternalFinding[] = [];
+    // TruffleHog outputs one JSON object per line
+    for (const line of result.split("\n").filter(Boolean)) {
+      try {
+        const parsed = JSON.parse(line);
+        findings.push({
+          tool: "TruffleHog",
+          severity: "critical",
+          rule: parsed.DetectorName ?? parsed.SourceMetadata?.Data?.Filesystem?.file ?? "unknown",
+          message: `Secret detected: ${parsed.DetectorName ?? "unknown type"} [REDACTED]`,
+          line: parsed.SourceMetadata?.Data?.Filesystem?.line,
+        });
+      } catch { /* skip malformed lines */ }
+    }
+
+    audit("trufflehog", `${findings.length} secrets found (--no-verification)`);
+    return findings;
+  } catch {
+    audit("trufflehog", "Scan completed (no findings or error)");
+    return [];
+  } finally {
+    try { unlinkSync(tmpFile); rmdirSync(tmpDir); } catch { /* cleanup */ }
+  }
+}
+
+/**
+ * Run detect-secrets on code string for entropy-based secret detection.
+ * Catches secrets that don't match known patterns — the "unknown unknowns."
+ */
+function runDetectSecrets(code: string): ExternalFinding[] {
+  if (!toolExists("detect-secrets")) return [];
+
+  const tmpDir = mkdtempSync(join(tmpdir(), "bci-scan-"));
+  const tmpFile = join(tmpDir, "scan.txt");
+
+  try {
+    writeFileSync(tmpFile, code, "utf-8");
+
+    const result = execFileSync("detect-secrets", [
+      "scan",
+      tmpFile,
+      "--list",
+    ], {
+      encoding: "utf-8",
+      timeout: 30000,
+    });
+
+    const parsed = JSON.parse(result);
+    const findings: ExternalFinding[] = [];
+
+    for (const [_file, secrets] of Object.entries(parsed.results ?? {})) {
+      for (const secret of secrets as Array<{ type: string; line_number: number }>) {
+        findings.push({
+          tool: "detect-secrets",
+          severity: "high",
+          rule: secret.type ?? "high-entropy-string",
+          message: `Entropy-based secret: ${secret.type ?? "High entropy string"} [REDACTED]`,
+          line: secret.line_number,
+        });
+      }
+    }
+
+    audit("detect-secrets", `${findings.length} entropy-based secrets found`);
+    return findings;
+  } catch {
+    audit("detect-secrets", "Scan completed (no findings or error)");
+    return [];
+  } finally {
+    try { unlinkSync(tmpFile); rmdirSync(tmpDir); } catch { /* cleanup */ }
+  }
+}
+
+/**
+ * Run OSV-Scanner on a package manifest for vulnerability scanning.
+ * Uses experimental offline mode if available.
+ */
+function runOsvScanner(code: string, filename?: string): ExternalFinding[] {
+  if (!toolExists("osv-scanner")) return [];
+
+  const isManifest = filename && (
+    filename.endsWith("package.json") ||
+    filename.endsWith("package-lock.json") ||
+    filename.endsWith("requirements.txt") ||
+    filename.endsWith("Pipfile.lock") ||
+    filename.endsWith("go.sum") ||
+    filename.endsWith("Cargo.lock") ||
+    filename.endsWith("pom.xml")
+  );
+  if (!isManifest) return [];
+
+  const tmpDir = mkdtempSync(join(tmpdir(), "bci-scan-"));
+  const tmpFile = join(tmpDir, filename ?? "manifest");
+
+  try {
+    writeFileSync(tmpFile, code, "utf-8");
+
+    const result = execFileSync("osv-scanner", [
+      "--format", "json",
+      "--lockfile", `${tmpFile}`,
+    ], {
+      encoding: "utf-8",
+      timeout: 60000,
+    });
+
+    const parsed = JSON.parse(result);
+    const findings: ExternalFinding[] = [];
+
+    for (const result_entry of parsed.results ?? []) {
+      for (const pkg of result_entry.packages ?? []) {
+        for (const vuln of pkg.vulnerabilities ?? []) {
+          findings.push({
+            tool: "OSV-Scanner",
+            severity: mapOsvSeverity(vuln.database_specific?.severity ?? "MODERATE"),
+            rule: vuln.id ?? "unknown",
+            message: `${vuln.id}: ${pkg.package?.name}@${pkg.package?.version} — ${vuln.summary ?? "Known vulnerability"}`,
+          });
+        }
+      }
+    }
+
+    audit("osv-scanner", `Scanned ${filename}, ${findings.length} vulnerabilities found`);
+    return findings;
+  } catch {
+    audit("osv-scanner", "Scan completed (no findings or error)");
+    return [];
+  } finally {
+    try { unlinkSync(tmpFile); rmdirSync(tmpDir); } catch { /* cleanup */ }
+  }
+}
+
+function mapOsvSeverity(sev: string): ExternalFinding["severity"] {
+  switch (sev.toUpperCase()) {
+    case "CRITICAL": return "critical";
+    case "HIGH": return "high";
+    case "MODERATE": case "MEDIUM": return "medium";
+    case "LOW": return "low";
+    default: return "medium";
+  }
+}
+
+/**
  * Format external findings into a markdown report section.
  */
 function formatExternalFindings(findings: ExternalFinding[]): string {
@@ -315,11 +492,32 @@ export function runExternalScanners(
     allFindings.push(...gitleaksFindings);
   }
 
+  // Secrets: TruffleHog (--no-verification MANDATORY)
+  const trufflehogFindings = runTrufflehog(code);
+  if (trufflehogFindings.length > 0 || toolExists("trufflehog")) {
+    toolsRun.push("TruffleHog");
+    allFindings.push(...trufflehogFindings);
+  }
+
+  // Secrets: detect-secrets (entropy-based)
+  const detectSecretsFindings = runDetectSecrets(code);
+  if (detectSecretsFindings.length > 0 || toolExists("detect-secrets")) {
+    toolsRun.push("detect-secrets");
+    allFindings.push(...detectSecretsFindings);
+  }
+
   // SCA: Grype (only for package manifests)
   const grypeFindings = runGrype(code, filename);
   if (grypeFindings.length > 0 || toolExists("grype")) {
     toolsRun.push("Grype");
     allFindings.push(...grypeFindings);
+  }
+
+  // SCA: OSV-Scanner (only for package manifests)
+  const osvFindings = runOsvScanner(code, filename);
+  if (osvFindings.length > 0 || toolExists("osv-scanner")) {
+    toolsRun.push("OSV-Scanner");
+    allFindings.push(...osvFindings);
   }
 
   const report = formatExternalFindings(allFindings);
