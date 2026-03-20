@@ -7,6 +7,7 @@ import { getPii, getTara, getSecurityScanPatterns } from "../data/loader.js";
 import { assertNoInjection } from "../security/injection.js";
 import { redactCredentials, containsCredentials } from "../security/credential-redactor.js";
 import { sanitizeReport } from "../security/sanitizer.js";
+import { safeRegexTest } from "../security/safe-regex.js";
 import { runExternalScanners } from "./security-orchestrator.js";
 import type { BciScanInput } from "../security/validator.js";
 import type { ToolResult } from "../types/index.js";
@@ -27,17 +28,17 @@ const BCI_IMPORTS = [
   /#include\s*[<"](?:lsl_cpp|brainflow|openbci)/,
 ];
 
-// Unencrypted transport patterns
+// Unencrypted transport patterns (string-based for safeRegexTest)
 const UNENCRYPTED_PATTERNS = [
-  { pattern: /(?:http:\/\/|ws:\/\/)(?!localhost|127\.0\.0\.1)/gi, name: "Unencrypted HTTP/WS transport", tara: "QIF-T0003" },
-  { pattern: /bluetooth(?!.*encrypt)/gi, name: "Bluetooth without encryption mention", tara: "QIF-T0003" },
-  { pattern: /(?:tcp|udp)_(?:socket|connect|send)/gi, name: "Raw TCP/UDP socket", tara: "QIF-T0004" },
+  { source: "(?:http:\\/\\/|ws:\\/\\/)(?!localhost|127\\.0\\.0\\.1)", flags: "gi", name: "Unencrypted HTTP/WS transport", tara: "QIF-T0003" },
+  { source: "bluetooth(?!.*encrypt)", flags: "gi", name: "Bluetooth without encryption mention", tara: "QIF-T0003" },
+  { source: "(?:tcp|udp)_(?:socket|connect|send)", flags: "gi", name: "Raw TCP/UDP socket", tara: "QIF-T0004" },
 ];
 
-// Hardcoded credential patterns (additional to credentials.ts)
+// Hardcoded credential patterns (string-based for safeRegexTest)
 const HARDCODED_PATTERNS = [
-  { pattern: /(?:password|passwd|pwd)\s*[:=]\s*['"][^'"]+['"]/gi, name: "Hardcoded password" },
-  { pattern: /(?:key|secret|token)\s*[:=]\s*['"][A-Za-z0-9+/=]{16,}['"]/gi, name: "Hardcoded secret" },
+  { source: "(?:password|passwd|pwd)\\s*[:=]\\s*['\"][^'\"]+['\"]", flags: "gi", name: "Hardcoded password" },
+  { source: "(?:key|secret|token)\\s*[:=]\\s*['\"][A-Za-z0-9+/=]{16,}['\"]", flags: "gi", name: "Hardcoded secret" },
 ];
 
 interface Finding {
@@ -77,12 +78,11 @@ export function bciScan(input: BciScanInput): ToolResult {
     });
   }
 
-  // 1. Unencrypted transport
-  for (const { pattern, name, tara } of UNENCRYPTED_PATTERNS) {
-    const freshPattern = new RegExp(pattern.source, pattern.flags);
-    const lines = code.split("\n");
+  // 1. Unencrypted transport — uses safeRegexTest
+  const lines = code.split("\n");
+  for (const { source, flags, name, tara } of UNENCRYPTED_PATTERNS) {
     for (let i = 0; i < lines.length; i++) {
-      if (freshPattern.test(lines[i])) {
+      if (safeRegexTest(source, flags, lines[i])) {
         findings.push({
           severity: "high",
           category: "Unencrypted Transport",
@@ -105,9 +105,8 @@ export function bciScan(input: BciScanInput): ToolResult {
     });
   }
 
-  for (const { pattern, name } of HARDCODED_PATTERNS) {
-    const freshPattern = new RegExp(pattern.source, pattern.flags);
-    if (freshPattern.test(code)) {
+  for (const { source, flags, name } of HARDCODED_PATTERNS) {
+    if (safeRegexTest(source, flags, code)) {
       findings.push({
         severity: "critical",
         category: "Hardcoded Credentials",
@@ -117,23 +116,18 @@ export function bciScan(input: BciScanInput): ToolResult {
     }
   }
 
-  // 3. PII patterns (only in BCI context)
+  // 3. PII patterns (only in BCI context) — uses safeRegexTest (CWE-1333 mitigated)
   if (isBciCode || hasNeuralFile) {
     const pii = getPii();
     for (const p of pii.patterns) {
-      try {
-        const regex = new RegExp(p.pattern, "gi");
-        if (regex.test(code)) {
-          findings.push({
-            severity: p.severity,
-            category: "PII in BCI Pipeline",
-            description: `${p.name} (${p.id})`,
-            pattern_id: p.id,
-            remediation: p.remediation,
-          });
-        }
-      } catch {
-        // Skip patterns that don't compile in JS regex engine
+      if (safeRegexTest(p.pattern, "gi", code)) {
+        findings.push({
+          severity: p.severity,
+          category: "PII in BCI Pipeline",
+          description: `${p.name} (${p.id})`,
+          pattern_id: p.id,
+          remediation: p.remediation,
+        });
       }
     }
   }
@@ -155,20 +149,16 @@ export function bciScan(input: BciScanInput): ToolResult {
     // Filter by language — run pattern if it applies to this language or if language is unknown
     if (lang !== "unknown" && !p.context.includes(lang)) continue;
 
-    try {
-      const regex = new RegExp(p.pattern, "gi");
-      if (regex.test(code)) {
-        const categoryLabel = secPatterns.categories[p.category]?.label ?? p.category;
-        findings.push({
-          severity: p.severity,
-          category: `${categoryLabel}: ${p.name}`,
-          description: `${p.description} [${p.cwe}${p.owasp ? `, ${p.owasp}` : ""}]`,
-          pattern_id: p.id,
-          remediation: p.remediation,
-        });
-      }
-    } catch {
-      // Skip patterns that don't compile
+    // Uses safeRegexTest — patterns validated at startup (CWE-1333 mitigated)
+    if (safeRegexTest(p.pattern, "gi", code)) {
+      const categoryLabel = secPatterns.categories[p.category]?.label ?? p.category;
+      findings.push({
+        severity: p.severity,
+        category: `${categoryLabel}: ${p.name}`,
+        description: `${p.description} [${p.cwe}${p.owasp ? `, ${p.owasp}` : ""}]`,
+        pattern_id: p.id,
+        remediation: p.remediation,
+      });
     }
   }
 

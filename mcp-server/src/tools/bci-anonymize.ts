@@ -6,6 +6,7 @@
 import { getPii } from "../data/loader.js";
 import { assertNoInjection } from "../security/injection.js";
 import { redactCredentials } from "../security/credential-redactor.js";
+import { safeRegexTest } from "../security/safe-regex.js";
 import { sanitizeReport } from "../security/sanitizer.js";
 import type { BciAnonymizeInput } from "../security/validator.js";
 import type { ToolResult } from "../types/index.js";
@@ -88,29 +89,23 @@ export function bciAnonymize(input: BciAnonymizeInput): ToolResult {
 
       for (const p of pii.patterns) {
         if (!p.context.includes("filename")) continue;
-        try {
-          const regex = new RegExp(p.pattern, "gi");
-          if (regex.test(input.filename)) {
-            findings.push({
-              id: p.id,
-              name: p.name,
-              severity: p.severity,
-              remediation: p.remediation,
-            });
-          }
-          // Also check broad pattern if present
-          if (p.pattern_broad) {
-            const broadRegex = new RegExp(p.pattern_broad, "g");
-            if (broadRegex.test(input.filename)) {
-              findings.push({
-                id: `${p.id}-broad`,
-                name: `${p.name} (broad match)`,
-                severity: p.severity,
-                remediation: p.remediation,
-              });
-            }
-          }
-        } catch {
+        if (safeRegexTest(p.pattern, "gi", input.filename)) {
+          findings.push({
+            id: p.id,
+            name: p.name,
+            severity: p.severity,
+            remediation: p.remediation,
+          });
+        }
+        // Also check broad pattern if present
+        if (p.pattern_broad && safeRegexTest(p.pattern_broad, "g", input.filename)) {
+          findings.push({
+            id: `${p.id}-broad`,
+            name: `${p.name} (broad match)`,
+            severity: p.severity,
+            remediation: p.remediation,
+          });
+        } else {
           // Skip
         }
       }
@@ -153,20 +148,15 @@ export function bciAnonymize(input: BciAnonymizeInput): ToolResult {
       }> = [];
 
       for (const p of pii.patterns) {
-        try {
-          const regex = new RegExp(p.pattern, "gi");
-          if (regex.test(content)) {
-            findings.push({
-              id: p.id,
-              name: p.name,
-              severity: p.severity,
-              category: pii.categories[p.category]?.label ?? p.category,
-              remediation: p.remediation,
-              regulations: p.regulations,
-            });
-          }
-        } catch {
-          // Skip
+        if (safeRegexTest(p.pattern, "gi", content)) {
+          findings.push({
+            id: p.id,
+            name: p.name,
+            severity: p.severity,
+            category: pii.categories[p.category]?.label ?? p.category,
+            remediation: p.remediation,
+            regulations: p.regulations,
+          });
         }
       }
 

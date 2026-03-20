@@ -12,6 +12,7 @@ import { readFileSync, statSync } from "node:fs";
 import { resolveDataPath } from "../security/path-guard.js";
 import { detectInjection } from "../security/injection.js";
 import { audit } from "../security/audit.js";
+import { validatePatternBatch } from "../security/safe-regex.js";
 import type {
   TaraData,
   NissDeviceData,
@@ -111,6 +112,17 @@ export function loadAllData(): void {
   scanDataForPoisoning(taraData.techniques, "tara.techniques");
   scanDataForPoisoning(guardrailData.guardrails, "guardrails.guardrails");
   scanDataForPoisoning(piiData.patterns, "pii.patterns");
+
+  // CWE-1333: Validate all regex patterns at startup to catch ReDoS
+  const piiValidation = validatePatternBatch(piiData.patterns);
+  if (piiValidation.rejected.length > 0) {
+    audit("redos-check", `Rejected ${piiValidation.rejected.length} PII patterns: ${piiValidation.rejected.join(", ")}`);
+  }
+  const secValidation = validatePatternBatch(securityScanData.patterns);
+  if (secValidation.rejected.length > 0) {
+    audit("redos-check", `Rejected ${secValidation.rejected.length} security patterns: ${secValidation.rejected.join(", ")}`);
+  }
+  audit("redos-check", `Validated ${piiValidation.valid + secValidation.valid} regex patterns at startup`);
 
   audit("startup", `Data loaded: ${taraData.techniques.length} techniques, ${nissDeviceData.devices.length} devices, ${piiData.patterns.length} PII patterns, ${guardrailData.guardrails.length} guardrails, ${securityScanData.patterns.length} OWASP/CWE/Burp patterns`);
 }

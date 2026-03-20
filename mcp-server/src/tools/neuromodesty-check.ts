@@ -97,7 +97,9 @@ function checkGuardrail(text: string, guardrail: Guardrail, patterns: RegExp[]):
   const violations: string[] = [];
 
   for (const pattern of patterns) {
-    const fresh = new RegExp(pattern.source, pattern.flags);
+    // Create fresh instance to reset lastIndex (patterns are hardcoded constants, not user input)
+    // eslint-disable-next-line security/detect-non-literal-regexp -- patterns are compile-time constants
+    const fresh = RegExp(pattern.source, pattern.flags);
     let match;
     while ((match = fresh.exec(text)) !== null) {
       const start = Math.max(0, match.index - 30);
@@ -132,7 +134,8 @@ export function neuromodestyCheck(input: NeuromodestyCheckInput): ToolResult {
   // QIF status checks
   if (input.include_qif_checks) {
     for (const pattern of QIF_STATUS_VIOLATIONS) {
-      const fresh = new RegExp(pattern.source, pattern.flags);
+      // eslint-disable-next-line security/detect-non-literal-regexp -- compile-time constant
+      const fresh = RegExp(pattern.source, pattern.flags);
       let match;
       while ((match = fresh.exec(input.text)) !== null) {
         const start = Math.max(0, match.index - 30);

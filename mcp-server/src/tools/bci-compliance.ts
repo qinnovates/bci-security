@@ -5,6 +5,7 @@
 import { getCompliance, getPii } from "../data/loader.js";
 import { assertNoInjection } from "../security/injection.js";
 import { redactCredentials } from "../security/credential-redactor.js";
+import { safeRegexTest } from "../security/safe-regex.js";
 import { sanitizeReport } from "../security/sanitizer.js";
 import type { BciComplianceInput } from "../security/validator.js";
 import type { ToolResult } from "../types/index.js";
@@ -113,20 +114,17 @@ export function bciCompliance(input: BciComplianceInput): ToolResult {
           continue;
         }
 
-        try {
-          const regex = new RegExp(p.pattern, "gi");
-          if (regex.test(code)) {
-            findings.push({
-              pattern_id: p.id,
-              name: p.name,
-              severity: p.severity,
-              category: pii.categories[p.category]?.label ?? p.category,
-              description: p.description,
-              remediation: p.remediation,
-              regulations: p.regulations,
-            });
-          }
-        } catch {
+        if (safeRegexTest(p.pattern, "gi", code)) {
+          findings.push({
+            pattern_id: p.id,
+            name: p.name,
+            severity: p.severity,
+            category: pii.categories[p.category]?.label ?? p.category,
+            description: p.description,
+            remediation: p.remediation,
+            regulations: p.regulations,
+          });
+        } else {
           // Skip patterns that don't compile
         }
       }
