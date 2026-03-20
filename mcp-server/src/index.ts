@@ -36,7 +36,7 @@ import { bciThreatModel } from "./tools/bci-threat-model.js";
 import { bciAnonymize } from "./tools/bci-anonymize.js";
 import { neuromodestyCheck } from "./tools/neuromodesty-check.js";
 import { bciLearn } from "./tools/bci-learn.js";
-import { securityToolStatus, runDastScan } from "./tools/security-orchestrator.js";
+import { securityToolStatus, runDastScan, runSupplyChainScan } from "./tools/security-orchestrator.js";
 
 // Input validators
 import {
@@ -251,6 +251,23 @@ const TOOLS = [
     },
   },
   {
+    name: "supply_chain_scan",
+    description:
+      "Scan MCP server configs and dependencies for supply chain risks. " +
+      "MCPShield (typosquatting, CVEs, credentials), SkillFortify (ASBOM, trust scores), " +
+      "OpenSSF Scorecard (maintainer reputation). All run locally.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        config_path: {
+          type: "string",
+          description: "Path to MCP config file, project directory, or GitHub repo URL (for Scorecard)",
+        },
+      },
+      required: [],
+    },
+  },
+  {
     name: "security_tool_status",
     description:
       "Show which external security tools are installed and available. " +
@@ -279,6 +296,10 @@ const TOOL_HANDLERS: Record<string, ToolHandler> = {
   dast_scan: (args) => {
     const parsed = z.object({ target_url: z.string().url() }).parse(args);
     return runDastScan(parsed.target_url);
+  },
+  supply_chain_scan: (args) => {
+    const parsed = z.object({ config_path: z.string().max(500).optional() }).parse(args);
+    return runSupplyChainScan(parsed.config_path);
   },
   security_tool_status: () => securityToolStatus(),
 };

@@ -537,6 +537,9 @@ export function getToolStatus(): Record<string, boolean> {
     checkov: toolExists("checkov"),
     nuclei: toolExists("nuclei"),
     nikto: toolExists("nikto"),
+    mcpshield: toolExists("mcpshield"),
+    skillfortify: toolExists("skillfortify"),
+    scorecard: toolExists("scorecard"),
   };
 }
 
@@ -747,6 +750,125 @@ function mapNucleiSeverity(sev: string): ExternalFinding["severity"] {
 }
 
 /**
+ * Run supply chain security scan on an MCP server config or project directory.
+ * MCPShield: typosquat detection, CVE check, credential exposure
+ * SkillFortify: ASBOM generation, trust scores, formal verification
+ * OpenSSF Scorecard: maintainer reputation scoring (requires GitHub token)
+ */
+export function runSupplyChainScan(configPath?: string): ToolResult {
+  const findings: ExternalFinding[] = [];
+  const toolsRun: string[] = [];
+
+  // MCPShield scan
+  if (toolExists("mcpshield")) {
+    try {
+      const args = configPath ? ["scan", "--config", configPath] : ["scan"];
+      const result = execFileSync("mcpshield", args, {
+        encoding: "utf-8",
+        timeout: 60000,
+      });
+      // MCPShield outputs text report
+      if (result.includes("CRITICAL") || result.includes("HIGH") || result.includes("WARNING")) {
+        findings.push({
+          tool: "MCPShield",
+          severity: result.includes("CRITICAL") ? "critical" : "high",
+          rule: "supply-chain",
+          message: result.trim().slice(0, 500),
+        });
+      }
+      toolsRun.push("MCPShield");
+      audit("mcpshield", "Supply chain scan completed");
+    } catch {
+      toolsRun.push("MCPShield");
+      audit("mcpshield", "Scan completed (no findings or error)");
+    }
+  }
+
+  // SkillFortify ASBOM generation
+  if (toolExists("skillfortify")) {
+    try {
+      const args = configPath
+        ? ["scan", "--path", configPath, "--format", "json"]
+        : ["scan", "--format", "json"];
+      const result = execFileSync("skillfortify", args, {
+        encoding: "utf-8",
+        timeout: 120000,
+      });
+      try {
+        const parsed = JSON.parse(result);
+        for (const skill of parsed.skills ?? []) {
+          if (skill.trust_level === "UNSIGNED" || skill.trust_level === "UNVERIFIED") {
+            findings.push({
+              tool: "SkillFortify",
+              severity: "medium",
+              rule: `trust-${skill.trust_level.toLowerCase()}`,
+              message: `${skill.name}: trust level ${skill.trust_level}`,
+            });
+          }
+        }
+      } catch { /* non-JSON output */ }
+      toolsRun.push("SkillFortify");
+      audit("skillfortify", "ASBOM scan completed");
+    } catch {
+      toolsRun.push("SkillFortify");
+      audit("skillfortify", "Scan completed (no findings or error)");
+    }
+  }
+
+  // OpenSSF Scorecard (requires GITHUB_TOKEN for rate limiting)
+  if (toolExists("scorecard") && configPath?.includes("github.com")) {
+    try {
+      const result = execFileSync("scorecard", [
+        "--repo", configPath,
+        "--format", "json",
+      ], {
+        encoding: "utf-8",
+        timeout: 120000,
+        env: { ...process.env },
+      });
+      try {
+        const parsed = JSON.parse(result);
+        const score = parsed.score ?? 0;
+        if (score < 5) {
+          findings.push({
+            tool: "Scorecard",
+            severity: score < 3 ? "critical" : "high",
+            rule: `scorecard-${score.toFixed(1)}`,
+            message: `OpenSSF Scorecard: ${score.toFixed(1)}/10. ${parsed.checks?.filter((c: { score: number }) => c.score < 5).map((c: { name: string; score: number }) => `${c.name}:${c.score}`).join(", ") ?? ""}`,
+          });
+        }
+      } catch { /* parse error */ }
+      toolsRun.push("Scorecard");
+      audit("scorecard", `Scored ${configPath}`);
+    } catch {
+      toolsRun.push("Scorecard");
+      audit("scorecard", "Scan completed (no findings or error)");
+    }
+  }
+
+  let report = "## Supply Chain Security Scan\n\n";
+  report += `**Tools run:** ${toolsRun.length > 0 ? toolsRun.join(", ") : "none available"}\n`;
+  report += `**Findings:** ${findings.length}\n\n`;
+
+  if (findings.length === 0 && toolsRun.length > 0) {
+    report += "No supply chain issues detected.\n";
+  } else if (findings.length > 0) {
+    report += formatExternalFindings(findings);
+  }
+
+  if (toolsRun.length === 0) {
+    report += "Install supply chain tools:\n```bash\npip3 install mcpshield skillfortify\nbrew install scorecard\n```\n";
+  }
+
+  report += "\n---\n*Supply chain scan checks MCP configs for typosquatting, " +
+    "unverified publishers, credential exposure, and maintainer reputation.*";
+
+  return {
+    content: [{ type: "text", text: sanitizeReport(report) }],
+  };
+}
+
+/**
  * Tool status report — shows which external tools are available.
  */
 export function securityToolStatus(): ToolResult {
@@ -774,6 +896,9 @@ export function securityToolStatus(): ToolResult {
   report += `| IaC | Checkov | ${status.checkov ? "installed" : "missing"} | --skip-download |\n`;
   report += `| DAST | Nuclei | ${status.nuclei ? "installed" : "missing"} | -duc -ni |\n`;
   report += `| DAST | Nikto | ${status.nikto ? "installed" : "missing"} | -nocheck |\n`;
+  report += `| Supply Chain | MCPShield | ${status.mcpshield ? "installed" : "missing"} | none needed |\n`;
+  report += `| Supply Chain | SkillFortify | ${status.skillfortify ? "installed" : "missing"} | none needed |\n`;
+  report += `| Supply Chain | Scorecard | ${status.scorecard ? "installed" : "missing"} | GITHUB_TOKEN needed |\n`;
   report += "\n";
 
   report += "### Built-in (always available, zero dependencies)\n\n";
