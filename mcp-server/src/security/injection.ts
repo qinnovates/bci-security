@@ -3,7 +3,7 @@
  * Canonical keyword list. All user-supplied inputs pass through this.
  */
 
-const INJECTION_TRIGGERS: readonly string[] = [
+export const INJECTION_TRIGGERS: readonly string[] = [
   // Canonical list from SAFETY.md Section 2
   "important:",
   "claude:",

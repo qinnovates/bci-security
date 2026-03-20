@@ -3,17 +3,18 @@
  * Code is passed as a string argument. No file system access.
  */
 
-import { getPii, getTara } from "../data/loader.js";
+import { getPii, getTara, getSecurityScanPatterns } from "../data/loader.js";
 import { assertNoInjection } from "../security/injection.js";
-import { redactCredentials, containsCredentials } from "../security/credentials.js";
+import { redactCredentials, containsCredentials } from "../security/credential-redactor.js";
 import { sanitizeReport } from "../security/sanitizer.js";
 import type { BciScanInput } from "../security/validator.js";
 import type { ToolResult } from "../types/index.js";
 
 const DISCLAIMER =
-  "\n\n---\n*This scan uses pattern matching (not static analysis). " +
-  "False positives and false negatives are expected. " +
-  "Not a substitute for professional security review.*";
+  "\n\n---\n*This scan uses pattern matching against OWASP Top 10:2021, OWASP API Security Top 10:2023, " +
+  "OWASP LLM Top 10:2025, CWE Top 25:2024, Burp Suite categories, and BCI-specific threat patterns. " +
+  "Not static analysis. False positives and false negatives are expected. " +
+  "Not a substitute for professional security review or full SAST (e.g., Semgrep).*";
 
 // Neural data file extensions that trigger consent gate
 const NEURAL_EXTENSIONS = [".edf", ".bdf", ".xdf", ".gdf", ".fif", ".nwb"];
@@ -39,7 +40,7 @@ const HARDCODED_PATTERNS = [
 ];
 
 interface Finding {
-  severity: "critical" | "high" | "medium" | "info";
+  severity: "critical" | "high" | "medium" | "low" | "info";
   category: string;
   description: string;
   line?: number;
@@ -136,7 +137,41 @@ export function bciScan(input: BciScanInput): ToolResult {
     }
   }
 
-  // 4. TARA technique mapping for findings
+  // 4. OWASP / CWE / Burp Suite patterns (all code, not just BCI)
+  const secPatterns = getSecurityScanPatterns();
+  const langMap: Record<string, string> = {
+    python: "python",
+    javascript: "javascript",
+    typescript: "typescript",
+    c: "c",
+    cpp: "cpp",
+    matlab: "unknown",
+    unknown: "unknown",
+  };
+  const lang = langMap[input.language] ?? "unknown";
+
+  for (const p of secPatterns.patterns) {
+    // Filter by language — run pattern if it applies to this language or if language is unknown
+    if (lang !== "unknown" && !p.context.includes(lang)) continue;
+
+    try {
+      const regex = new RegExp(p.pattern, "gi");
+      if (regex.test(code)) {
+        const categoryLabel = secPatterns.categories[p.category]?.label ?? p.category;
+        findings.push({
+          severity: p.severity,
+          category: `${categoryLabel}: ${p.name}`,
+          description: `${p.description} [${p.cwe}${p.owasp ? `, ${p.owasp}` : ""}]`,
+          pattern_id: p.id,
+          remediation: p.remediation,
+        });
+      }
+    } catch {
+      // Skip patterns that don't compile
+    }
+  }
+
+  // 5. TARA technique mapping for findings
   const tara = getTara();
   const taraRefs = new Set(findings.map((f) => f.tara_ref).filter(Boolean));
   const relatedTechniques = tara.techniques.filter((t) => taraRefs.has(t.id));
@@ -171,7 +206,7 @@ export function bciScan(input: BciScanInput): ToolResult {
     `**Findings:** ${findings.length} (${criticals} critical, ${highs} high, ${mediums} medium)\n\n`;
 
   // Group by severity
-  for (const severity of ["critical", "high", "medium", "info"] as const) {
+  for (const severity of ["critical", "high", "medium", "low", "info"] as const) {
     const group = findings.filter((f) => f.severity === severity);
     if (group.length === 0) continue;
 

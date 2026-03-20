@@ -187,6 +187,27 @@ export interface HardrailsData {
   };
 }
 
+// --- Security Scan Patterns (OWASP/CWE/Burp) ---
+
+export interface SecurityScanPattern {
+  id: string;
+  name: string;
+  category: string;
+  owasp?: string;
+  cwe: string;
+  pattern: string;
+  severity: "critical" | "high" | "medium" | "low";
+  context: string[];
+  description: string;
+  remediation: string;
+}
+
+export interface SecurityScanData {
+  _metadata: { title: string; version: string; description: string; sources: string[] };
+  categories: Record<string, { label: string; description: string }>;
+  patterns: SecurityScanPattern[];
+}
+
 // --- Tool Result ---
 
 export interface ToolResult {

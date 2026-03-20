@@ -6,7 +6,8 @@
  * Fresh RegExp instances created per call.
  */
 
-import { redactCredentials } from "./credentials.js";
+import { redactCredentials } from "./credential-redactor.js";
+import { INJECTION_TRIGGERS } from "./injection.js";
 
 export interface SanitizeOptions {
   includeOrg?: boolean;
@@ -74,8 +75,40 @@ export function sanitizeReport(text: string, _options: SanitizeOptions = {}): st
     result = applyPattern(result, pattern, "[env]");
   }
 
+  // Rule 8: Output injection filtering (CWE-116, OWASP MCP06)
+  // Prevent user-supplied content in reports from containing LLM instruction patterns
+  // that could influence the host model reading this output
+  result = filterOutputInjection(result);
+
   // Self-verification pass (SAFETY.md Section 4 mandatory)
   result = selfVerify(result);
+
+  return result;
+}
+
+/**
+ * Filter LLM instruction patterns from output to prevent indirect prompt injection
+ * via tool output poisoning (OWASP MCP06:2025, CWE-116).
+ *
+ * When user-supplied code/text is reflected in report output, it could contain
+ * instructions targeting the host LLM. Replace trigger phrases with [filtered].
+ */
+function filterOutputInjection(text: string): string {
+  let result = text;
+  const normalized = text.normalize("NFKC").toLowerCase();
+
+  for (const trigger of INJECTION_TRIGGERS) {
+    let searchFrom = 0;
+    let pos: number;
+    while ((pos = normalized.indexOf(trigger, searchFrom)) !== -1) {
+      // Replace the trigger phrase in the original text, preserving surrounding context
+      result =
+        result.slice(0, pos) +
+        "[filtered]" +
+        result.slice(pos + trigger.length);
+      searchFrom = pos + "[filtered]".length;
+    }
+  }
 
   return result;
 }

@@ -13,6 +13,7 @@ import {
   getPii,
   getGuardrails,
   getCompliance,
+  getSecurityScanPatterns,
   getSecurityControls,
   getHardrails,
 } from "../data/loader.js";
@@ -86,6 +87,16 @@ const RESOURCES: ResourceDef[] = [
       "Combined guardrails (ethical constraints) + hardening (technical enforcement) model.",
     mimeType: "application/json",
     getData: () => getHardrails(),
+  },
+  {
+    uri: "bci://data/security-scan-patterns",
+    name: "Security Scan Patterns (OWASP/CWE/Burp)",
+    description:
+      "78 regex-based detection patterns covering OWASP Top 10:2021, OWASP API Security Top 10:2023, " +
+      "OWASP LLM Top 10:2025, CWE Top 25:2024, and Burp Suite categories. " +
+      "Targets Python, JavaScript, TypeScript, C/C++.",
+    mimeType: "application/json",
+    getData: () => getSecurityScanPatterns(),
   },
 ];
 

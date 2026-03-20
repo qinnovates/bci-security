@@ -25,6 +25,7 @@ import {
 
 import { loadAllData } from "./data/loader.js";
 import { registerResources } from "./resources/index.js";
+import { auditToolCall } from "./security/audit.js";
 
 // Tool implementations
 import { taraLookup } from "./tools/tara-lookup.js";
@@ -269,6 +270,7 @@ async function main(): Promise<void> {
     const handler = TOOL_HANDLERS[name];
 
     if (!handler) {
+      auditToolCall(name, {}, "error", "unknown-tool");
       return {
         content: [{ type: "text" as const, text: `Unknown tool: ${name}` }],
         isError: true,
@@ -276,7 +278,9 @@ async function main(): Promise<void> {
     }
 
     try {
-      return handler(args ?? {});
+      const result = handler(args ?? {});
+      auditToolCall(name, args ?? {}, "ok");
+      return result;
     } catch (error) {
       // Sanitize error messages to prevent internal path/detail leakage
       const rawMessage = error instanceof Error ? error.message : String(error);
@@ -295,6 +299,10 @@ async function main(): Promise<void> {
         // Strip any absolute paths from error messages
         safeMessage = rawMessage.replace(/\/[\w/.-]+/g, "[path]");
       }
+
+      const errorType = error instanceof z.ZodError ? "validation" :
+        rawMessage.includes("Injection") ? "injection" : "internal";
+      auditToolCall(name, args ?? {}, "error", errorType);
 
       return {
         content: [{ type: "text" as const, text: `Error: ${safeMessage}` }],

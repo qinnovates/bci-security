@@ -4,7 +4,7 @@
 
 import { getCompliance, getPii } from "../data/loader.js";
 import { assertNoInjection } from "../security/injection.js";
-import { redactCredentials } from "../security/credentials.js";
+import { redactCredentials } from "../security/credential-redactor.js";
 import { sanitizeReport } from "../security/sanitizer.js";
 import type { BciComplianceInput } from "../security/validator.js";
 import type { ToolResult } from "../types/index.js";
